@@ -62,6 +62,7 @@
   .abv-metric-toggle{cursor:pointer;transition:all .2s}
   .abv-metric-toggle:hover{border-color:#5BA4CF!important}
   .demo-banner{background:linear-gradient(90deg,#3D2E00,#4A3800);border-bottom:1px solid #D4AC0D;padding:7px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px}
+  .inv-section-hdr:hover td{background:#111D2B!important}
 
   /* ── MOBILE BOTTOM NAV ── */
   #mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#111D2B;border-top:1px solid #2C3E50;z-index:200;padding-bottom:env(safe-area-inset-bottom)}
@@ -639,6 +640,7 @@ const localDB = { from: table => new LocalQueryBuilder(table) };
 let sb = null;
 let demoMode = false;
 let inventory = [];
+const collapsedSections = new Set();
 let recipes = [];
 let currentTab = 'inventory';
 let modalRecipeGroup = null;
@@ -765,6 +767,12 @@ function initMobileMode(){
 async function loadInventory(){
   const {data}=await sb.from('inventory').select('*').order('item_name');
   inventory=data||[];
+  // Fix puree package sizes — set all puree items to 26 oz if not already
+  const pureeFix=inventory.filter(i=>(i.category||'').toLowerCase().includes('puree')&&i.package_size_oz!==26);
+  if(pureeFix.length){
+    await Promise.all(pureeFix.map(i=>sb.from('inventory').update({package_size_oz:26}).eq('id',i.id)));
+    pureeFix.forEach(i=>{ i.package_size_oz=26; });
+  }
   renderInventory();
   populateCatFilter();
 }
@@ -774,6 +782,23 @@ function costPerOz(item){
   return item.unit_cost/item.package_size_oz;
 }
 
+function invItemRow(item){
+  const cpoz=costPerOz(item);
+  return `<tr>
+    <td style="font-weight:500">${esc(item.item_name)}</td>
+    <td><span class="badge badge-blue">${esc(item.category||'')}</span></td>
+    <td style="color:#9BB0C8">${item.package_size_oz?fmtNum(item.package_size_oz,3)+' oz':'<span style="color:#E57373">?</span>'}</td>
+    <td>${item.unit_cost?'$'+fmtNum(item.unit_cost,2):'—'}</td>
+    <td style="color:#D4AC0D;font-weight:600">${cpoz?'$'+fmtNum(cpoz,4):'<span style="color:#E57373">Need pkg size</span>'}</td>
+    <td style="color:#5BA4CF">${item.abv!=null?fmtNum(item.abv*100,1)+'%':'<span style="color:#9BB0C8">—</span>'}</td>
+    <td style="color:#9BB0C8;font-size:12px">${esc(item.notes||'')}</td>
+    <td><div class="flex gap-1">
+      <button onclick="editIngredient('${item.id}')" class="btn-outline btn-sm">Edit</button>
+      <button onclick="deleteIngredient('${item.id}')" class="btn-danger">✕</button>
+    </div></td>
+  </tr>`;
+}
+
 function renderInventory(items){
   const list=items||getFilteredInventory();
   const tbody=document.getElementById('inv-tbody');
@@ -781,23 +806,35 @@ function renderInventory(items){
     tbody.innerHTML=`<tr><td colspan="8" class="text-center" style="padding:40px;color:#9BB0C8">No ingredients found.</td></tr>`;
     return;
   }
-  tbody.innerHTML=list.map(item=>{
-    const cpoz=costPerOz(item);
-    return `<tr>
-      <td style="font-weight:500">${esc(item.item_name)}</td>
-      <td><span class="badge badge-blue">${esc(item.category||'')}</span></td>
-      <td style="color:#9BB0C8">${item.package_size_oz?fmtNum(item.package_size_oz,3)+' oz':'<span style="color:#E57373">?</span>'}</td>
-      <td>${item.unit_cost?'$'+fmtNum(item.unit_cost,2):'—'}</td>
-      <td style="color:#D4AC0D;font-weight:600">${cpoz?'$'+fmtNum(cpoz,4):'<span style="color:#E57373">Need pkg size</span>'}</td>
-      <td style="color:#5BA4CF">${item.abv!=null?fmtNum(item.abv*100,1)+'%':'<span style="color:#9BB0C8">—</span>'}</td>
-      <td style="color:#9BB0C8;font-size:12px">${esc(item.notes||'')}</td>
-      <td><div class="flex gap-1">
-        <button onclick="editIngredient('${item.id}')" class="btn-outline btn-sm">Edit</button>
-        <button onclick="deleteIngredient('${item.id}')" class="btn-danger">✕</button>
-      </div></td>
+  // Group by category
+  const groups={};
+  list.forEach(item=>{
+    const cat=item.category||'Uncategorized';
+    if(!groups[cat]) groups[cat]=[];
+    groups[cat].push(item);
+  });
+  const searching=(document.getElementById('inv-search').value||'').trim().length>0
+    ||(document.getElementById('inv-cat-filter').value||'').length>0;
+  tbody.innerHTML=Object.keys(groups).sort().map(cat=>{
+    const catItems=groups[cat];
+    const collapsed=!searching&&collapsedSections.has(cat);
+    const arrow=collapsed?'▶':'▼';
+    const header=`<tr onclick="toggleInvSection('${esc(cat)}')" style="cursor:pointer;background:#0B1520;user-select:none;border-bottom:2px solid #2C3E50">
+      <td colspan="8" style="padding:12px 16px;font-weight:700;font-size:13px;color:#D4AC0D;letter-spacing:.6px;text-transform:uppercase">
+        <span style="margin-right:8px;font-size:11px;color:#9BB0C8">${arrow}</span>${esc(cat)}
+        <span style="color:#9BB0C8;font-weight:400;text-transform:none;letter-spacing:0;font-size:12px;margin-left:8px">${catItems.length} item${catItems.length!==1?'s':''}</span>
+      </td>
     </tr>`;
+    const rows=collapsed?'':catItems.map(invItemRow).join('');
+    return header+rows;
   }).join('');
   document.getElementById('inv-count').textContent=`${list.length} item${list.length!==1?'s':''}`;
+}
+
+function toggleInvSection(cat){
+  if(collapsedSections.has(cat)) collapsedSections.delete(cat);
+  else collapsedSections.add(cat);
+  renderInventory();
 }
 
 function getFilteredInventory(){
