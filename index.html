@@ -62,6 +62,44 @@
   .abv-metric-toggle{cursor:pointer;transition:all .2s}
   .abv-metric-toggle:hover{border-color:#5BA4CF!important}
   .demo-banner{background:linear-gradient(90deg,#3D2E00,#4A3800);border-bottom:1px solid #D4AC0D;padding:7px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px}
+
+  /* ── MOBILE BOTTOM NAV ── */
+  #mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#111D2B;border-top:1px solid #2C3E50;z-index:200;padding-bottom:env(safe-area-inset-bottom)}
+  #mobile-nav button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:10px 4px;background:none;border:none;color:#9BB0C8;font-size:10px;font-weight:600;cursor:pointer;letter-spacing:.3px;text-transform:uppercase;transition:color .15s}
+  #mobile-nav button.active{color:#D4AC0D}
+  #mobile-nav button .nav-icon{font-size:20px;line-height:1}
+
+  /* ── MOBILE MODE OVERRIDES (class-based for toggle) ── */
+  body.mobile main{padding:12px 10px 80px}
+  body.mobile header{padding:0 12px}
+  body.mobile header nav{display:none}
+  body.mobile #mobile-nav{display:flex}
+  body.mobile .modal-overlay{padding:0;align-items:flex-end}
+  body.mobile .modal{border-radius:18px 18px 0 0;max-width:100%!important;width:100%;max-height:92vh;overflow-y:auto;padding:16px!important}
+  body.mobile #recipes-grid{grid-template-columns:1fr!important}
+  body.mobile #builder-grid{grid-template-columns:1fr!important}
+  body.mobile #rm-metrics{grid-template-columns:1fr 1fr!important}
+  body.mobile #rm-version-info{grid-template-columns:1fr!important}
+  body.mobile .grid.grid-cols-3.gap-3.mb-4{grid-template-columns:1fr!important}
+  body.mobile .tbl th,body.mobile .tbl td{font-size:11px;padding:6px 8px}
+  body.mobile .conn-status-wrap{display:none}
+
+  /* ── AUTO-MOBILE on small screens ── */
+  @media(max-width:768px){
+    main{padding:12px 10px 80px!important}
+    header{padding:0 12px!important}
+    header nav{display:none!important}
+    #mobile-nav{display:flex!important}
+    .modal-overlay{padding:0!important;align-items:flex-end!important}
+    .modal{border-radius:18px 18px 0 0!important;max-width:100%!important;width:100%!important;max-height:92vh!important;overflow-y:auto!important;padding:16px!important}
+    #recipes-grid{grid-template-columns:1fr!important}
+    #builder-grid{grid-template-columns:1fr!important}
+    #rm-metrics{grid-template-columns:1fr 1fr!important}
+    #rm-version-info{grid-template-columns:1fr!important}
+    .grid.grid-cols-3.gap-3.mb-4{grid-template-columns:1fr!important}
+    .tbl th,.tbl td{font-size:11px!important;padding:6px 8px!important}
+    .conn-status-wrap{display:none!important}
+  }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
@@ -254,12 +292,25 @@
         <button onclick="switchTab('builder')" id="tab-builder" class="tab-btn" style="padding:0 20px;height:60px;font-size:14px;font-weight:600;background:none;border:none;color:#E8ECF0;cursor:pointer">🧪 Recipe Builder</button>
         <button onclick="switchTab('database')" id="tab-database" class="tab-btn" style="padding:0 20px;height:60px;font-size:14px;font-weight:600;background:none;border:none;color:#E8ECF0;cursor:pointer">📚 Recipe Database</button>
       </nav>
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 conn-status-wrap">
         <span id="conn-status" class="badge badge-purple">🖥 Local</span>
-        <button onclick="showSetup()" class="btn-outline btn-sm">Settings</button>
+        <button onclick="toggleMobileMode()" id="mobile-toggle-btn" class="btn-outline btn-sm" title="Toggle mobile view">📱</button>
       </div>
     </div>
   </header>
+
+  <!-- Mobile bottom nav -->
+  <div id="mobile-nav">
+    <button onclick="switchTab('inventory')" id="mnav-inventory" class="active">
+      <span class="nav-icon">📦</span>Inventory
+    </button>
+    <button onclick="switchTab('builder')" id="mnav-builder">
+      <span class="nav-icon">🧪</span>Builder
+    </button>
+    <button onclick="switchTab('database')" id="mnav-database">
+      <span class="nav-icon">📚</span>Recipes
+    </button>
+  </div>
 
   <main style="max-width:1400px;margin:0 auto;padding:24px">
 
@@ -332,7 +383,7 @@
           <button onclick="saveBuilderRecipe()" class="btn-gold">Save to Database</button>
         </div>
       </div>
-      <div class="grid gap-5" style="grid-template-columns:300px 1fr">
+      <div id="builder-grid" class="grid gap-5" style="grid-template-columns:300px 1fr">
         <div>
           <div class="card p-5">
             <div class="section-header mb-3">Recipe Info</div>
@@ -558,6 +609,7 @@ function launchApp(isDemo){
     document.getElementById('conn-status').textContent='● Connected';
     document.getElementById('conn-status').className='badge badge-green';
   }
+  initMobileMode();
   loadInventory().then(()=>{ loadRecipes(); });
   addBuilderRow(); addBuilderRow(); addBuilderRow();
 }
@@ -622,9 +674,28 @@ function switchTab(tab){
   ['inventory','builder','database'].forEach(t=>{
     document.getElementById('tab-'+t+'-panel').classList.toggle('hidden',t!==tab);
     document.getElementById('tab-'+t).classList.toggle('active',t===tab);
+    const mn=document.getElementById('mnav-'+t);
+    if(mn) mn.classList.toggle('active',t===tab);
   });
   currentTab=tab;
   if(tab==='database') filterRecipes();
+  window.scrollTo(0,0);
+}
+
+function toggleMobileMode(){
+  const isMobile=document.body.classList.toggle('mobile');
+  localStorage.setItem('mobile_mode',isMobile?'1':'0');
+  document.getElementById('mobile-toggle-btn').style.color=isMobile?'#D4AC0D':'';
+}
+
+function initMobileMode(){
+  // Auto-enable on small screens, or restore saved preference
+  const saved=localStorage.getItem('mobile_mode');
+  const autoMobile=window.innerWidth<=768;
+  if(saved==='1'||(saved===null&&autoMobile)){
+    document.body.classList.add('mobile');
+    document.getElementById('mobile-toggle-btn').style.color='#D4AC0D';
+  }
 }
 
 // ──────────────────────────────────────────────────────────────────────────
