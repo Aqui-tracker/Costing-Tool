@@ -539,65 +539,12 @@ let builderRows = [];
 let builderRowId = 0;
 
 // ──────────────────────────────────────────────────────────────────────────
-// SETUP / CONFIG
+// SETUP / CONFIG — credentials baked in, no setup screen needed
 // ──────────────────────────────────────────────────────────────────────────
-function getConfig(){ return {url:localStorage.getItem('sb_url')||'',key:localStorage.getItem('sb_key')||''}; }
+const SB_URL = 'https://helxtczvezbrapcrhmig.supabase.co';
+const SB_KEY = 'sb_publishable_JQC_kuAj99SasBLDwf3uhQ_qC4PJ1A1';
 
-function chooseMode(mode){
-  const demoBtn=document.getElementById('mode-demo-btn');
-  const cloudBtn=document.getElementById('mode-cloud-btn');
-  const cloudFields=document.getElementById('cloud-fields');
-  const demoGoBtn=document.getElementById('demo-go-btn');
-  if(mode==='demo'){
-    demoBtn.style.border='2px solid #D4AC0D'; cloudBtn.style.border='2px solid #2C3E50';
-    cloudFields.classList.add('hidden'); demoGoBtn.classList.remove('hidden');
-  } else {
-    cloudBtn.style.border='2px solid #D4AC0D'; demoBtn.style.border='2px solid #2C3E50';
-    cloudFields.classList.remove('hidden'); demoGoBtn.classList.add('hidden');
-  }
-}
-
-function showSetup(){
-  const cfg=getConfig();
-  document.getElementById('cfg-url').value=cfg.url;
-  document.getElementById('cfg-key').value=cfg.key;
-  // Pre-select the right mode
-  if(demoMode) chooseMode('demo'); else chooseMode('cloud');
-  document.getElementById('setup-modal').classList.remove('hidden');
-}
-
-async function startDemoMode(){
-  document.getElementById('setup-error').classList.add('hidden');
-  demoMode=true;
-  localStorage.setItem('app_mode','demo');
-  sb=localDB;
-  await seedLocalIfEmpty();
-  document.getElementById('setup-modal').classList.add('hidden');
-  launchApp(true);
-}
-
-async function saveCloudConfig(){
-  const url=document.getElementById('cfg-url').value.trim();
-  const key=document.getElementById('cfg-key').value.trim();
-  const err=document.getElementById('setup-error');
-  if(!url||!key){err.textContent='Both fields are required';err.classList.remove('hidden');return;}
-  try{
-    const client=supabase.createClient(url,key);
-    const {error}=await client.from('inventory').select('id').limit(1);
-    if(error&&error.code!=='PGRST116') throw error;
-    localStorage.setItem('sb_url',url);
-    localStorage.setItem('sb_key',key);
-    localStorage.setItem('app_mode','cloud');
-    demoMode=false;
-    sb=client;
-    err.classList.add('hidden');
-    document.getElementById('setup-modal').classList.add('hidden');
-    launchApp(false);
-  } catch(e){
-    err.textContent='Connection failed: '+(e.message||e);
-    err.classList.remove('hidden');
-  }
-}
+function showSetup(){ /* no-op — setup screen removed */ }
 
 function launchApp(isDemo){
   demoMode=isDemo;
@@ -663,29 +610,9 @@ async function seedLocalIfEmpty(){
 }
 
 async function init(){
-  const mode=localStorage.getItem('app_mode');
-  if(mode==='demo'){
-    demoMode=true;
-    sb=localDB;
-    await seedLocalIfEmpty();
-    launchApp(true);
-    return;
-  }
-  if(mode==='cloud'){
-    const cfg=getConfig();
-    if(cfg.url&&cfg.key){
-      try{
-        sb=supabase.createClient(cfg.url,cfg.key);
-        const {error}=await sb.from('inventory').select('id').limit(1);
-        if(error&&error.code!=='PGRST116') throw error;
-        launchApp(false);
-        return;
-      } catch(e){ /* fall through to setup */ }
-    }
-  }
-  // First time or bad config — show setup
-  chooseMode('demo');
-  document.getElementById('setup-modal').classList.remove('hidden');
+  sb=supabase.createClient(SB_URL, SB_KEY);
+  demoMode=false;
+  launchApp(false);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
