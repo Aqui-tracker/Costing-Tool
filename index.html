@@ -65,41 +65,76 @@
 
   /* ── MOBILE BOTTOM NAV ── */
   #mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#111D2B;border-top:1px solid #2C3E50;z-index:200;padding-bottom:env(safe-area-inset-bottom)}
-  #mobile-nav button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:10px 4px;background:none;border:none;color:#9BB0C8;font-size:10px;font-weight:600;cursor:pointer;letter-spacing:.3px;text-transform:uppercase;transition:color .15s}
+  #mobile-nav button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 4px;background:none;border:none;color:#9BB0C8;font-size:11px;font-weight:600;cursor:pointer;letter-spacing:.3px;text-transform:uppercase;transition:color .15s}
   #mobile-nav button.active{color:#D4AC0D}
-  #mobile-nav button .nav-icon{font-size:20px;line-height:1}
+  #mobile-nav button .nav-icon{font-size:22px;line-height:1}
 
-  /* ── MOBILE MODE OVERRIDES (class-based for toggle) ── */
-  body.mobile main{padding:12px 10px 80px}
-  body.mobile header{padding:0 12px}
+  /* ── MOBILE MODE OVERRIDES ── */
+  body.mobile header{padding:0 16px}
   body.mobile header nav{display:none}
   body.mobile #mobile-nav{display:flex}
-  body.mobile .modal-overlay{padding:0;align-items:flex-end}
-  body.mobile .modal{border-radius:18px 18px 0 0;max-width:100%!important;width:100%;max-height:92vh;overflow-y:auto;padding:16px!important}
-  body.mobile #recipes-grid{grid-template-columns:1fr!important}
-  body.mobile #builder-grid{grid-template-columns:1fr!important}
-  body.mobile #rm-metrics{grid-template-columns:1fr 1fr!important}
-  body.mobile #rm-version-info{grid-template-columns:1fr!important}
-  body.mobile .grid.grid-cols-3.gap-3.mb-4{grid-template-columns:1fr!important}
-  body.mobile .tbl th,body.mobile .tbl td{font-size:11px;padding:6px 8px}
   body.mobile .conn-status-wrap{display:none}
 
-  /* ── AUTO-MOBILE on small screens ── */
-  @media(max-width:768px){
-    main{padding:12px 10px 80px!important}
-    header{padding:0 12px!important}
-    header nav{display:none!important}
-    #mobile-nav{display:flex!important}
-    .modal-overlay{padding:0!important;align-items:flex-end!important}
-    .modal{border-radius:18px 18px 0 0!important;max-width:100%!important;width:100%!important;max-height:92vh!important;overflow-y:auto!important;padding:16px!important}
-    #recipes-grid{grid-template-columns:1fr!important}
-    #builder-grid{grid-template-columns:1fr!important}
-    #rm-metrics{grid-template-columns:1fr 1fr!important}
-    #rm-version-info{grid-template-columns:1fr!important}
-    .grid.grid-cols-3.gap-3.mb-4{grid-template-columns:1fr!important}
-    .tbl th,.tbl td{font-size:11px!important;padding:6px 8px!important}
-    .conn-status-wrap{display:none!important}
-  }
+  /* Main & spacing */
+  body.mobile main{padding:16px 14px 90px}
+  body.mobile h2{font-size:18px!important}
+
+  /* Page header rows — stack vertically */
+  body.mobile .flex.justify-between.items-center.mb-5,
+  body.mobile .flex.justify-between.items-start.mb-5{flex-direction:column;align-items:flex-start;gap:12px}
+  body.mobile .flex.justify-between.items-center.mb-5 .flex.gap-2,
+  body.mobile .flex.justify-between.items-start.mb-5 .flex.gap-2{width:100%}
+  body.mobile .flex.justify-between.items-center.mb-5 .flex.gap-2 button,
+  body.mobile .flex.justify-between.items-start.mb-5 .flex.gap-2 button{flex:1}
+
+  /* Recipe database grid */
+  body.mobile #recipes-grid{grid-template-columns:1fr!important;gap:12px!important}
+  body.mobile #recipes-grid .card{padding:18px!important}
+  body.mobile #recipes-grid h3{font-size:17px!important}
+  body.mobile #recipes-grid .metric-box{padding:10px!important}
+
+  /* Builder */
+  body.mobile #builder-grid{grid-template-columns:1fr!important}
+
+  /* Inventory table — show only Item Name, Cost/oz, Actions */
+  body.mobile #inv-tbody td:nth-child(2),
+  body.mobile #inv-tbody td:nth-child(3),
+  body.mobile #inv-tbody td:nth-child(4),
+  body.mobile #inv-tbody td:nth-child(6),
+  body.mobile #inv-tbody td:nth-child(7),
+  body.mobile #tab-inventory-panel thead th:nth-child(2),
+  body.mobile #tab-inventory-panel thead th:nth-child(3),
+  body.mobile #tab-inventory-panel thead th:nth-child(4),
+  body.mobile #tab-inventory-panel thead th:nth-child(6),
+  body.mobile #tab-inventory-panel thead th:nth-child(7){display:none}
+  body.mobile .tbl th,body.mobile .tbl td{font-size:13px;padding:12px 10px}
+
+  /* Recipe modal — slide up sheet */
+  body.mobile .modal-overlay{padding:0;align-items:flex-end}
+  body.mobile .modal{border-radius:20px 20px 0 0;max-width:100%!important;width:100%!important;max-height:94vh!important;overflow-y:auto;padding:20px 16px 24px!important}
+  body.mobile #rm-version-info{grid-template-columns:1fr 1fr!important;gap:10px}
+  body.mobile .grid.grid-cols-3.gap-3.mb-4{grid-template-columns:1fr 1fr 1fr!important;gap:8px}
+  body.mobile #rm-metrics{grid-template-columns:1fr 1fr!important;gap:8px}
+
+  /* Modal ingredient table — show only Ingredient, Amount, Delete */
+  body.mobile #rm-ing-tbody td:nth-child(3),
+  body.mobile #rm-ing-tbody td:nth-child(4),
+  body.mobile #rm-ing-tbody td:nth-child(5),
+  body.mobile #rm-ing-tbody td:nth-child(6),
+  body.mobile #recipe-modal thead th:nth-child(3),
+  body.mobile #recipe-modal thead th:nth-child(4),
+  body.mobile #recipe-modal thead th:nth-child(5),
+  body.mobile #recipe-modal thead th:nth-child(6){display:none}
+  body.mobile #recipe-modal .tbl th,body.mobile #recipe-modal .tbl td{font-size:14px;padding:11px 8px}
+  body.mobile #recipe-modal .input{font-size:15px!important;padding:10px 12px!important}
+
+  /* Modal buttons — stack full width */
+  body.mobile #recipe-modal .flex.gap-3.mt-5{flex-direction:column;gap:10px}
+  body.mobile #recipe-modal .flex.gap-3.mt-5 button{width:100%;padding:15px;font-size:15px;border-radius:10px}
+
+  /* Bigger touch targets throughout modal */
+  body.mobile .version-pill{padding:10px 16px!important;font-size:14px!important}
+  body.mobile .btn-outline.btn-sm,body.mobile .btn-gold.btn-sm,body.mobile .btn-sm{padding:10px 16px!important;font-size:13px!important}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
@@ -226,7 +261,7 @@
     </div>
     <div class="grid grid-cols-3 gap-3 mb-4">
       <div><label class="section-header block mb-1">Serve Size (oz)</label><input id="rm-serve" class="input" type="number" step="0.5" value="12"/></div>
-      <div><label class="section-header block mb-1">Yield (oz)</label><input id="rm-yield" class="input" type="number" step="1" placeholder="0"/></div>
+      <div><label class="section-header block mb-1">Yield (oz)</label><input id="rm-yield" class="input" type="number" step="0.25" placeholder="Auto" oninput="this.dataset.manual='1'"/></div>
       <div><label class="section-header block mb-1">Menu Price ($)</label><input id="rm-price" class="input" type="number" step="0.25" placeholder="0.00"/></div>
     </div>
     <div class="section-header mb-2">Ingredients</div>
@@ -409,7 +444,7 @@
               </div>
               <div>
                 <label class="section-header block mb-1" style="font-size:10px">Total Yield (oz)</label>
-                <input id="b-yield" class="input" type="number" step="1" placeholder="Auto or enter manually" oninput="recalcBuilder()"/>
+                <input id="b-yield" class="input" type="number" step="0.25" placeholder="Auto" oninput="this.dataset.manual='1';recalcBuilder()"/>
               </div>
               <div>
                 <label class="section-header block mb-1" style="font-size:10px">Menu Price ($)</label>
@@ -683,19 +718,22 @@ function switchTab(tab){
 }
 
 function toggleMobileMode(){
-  const isMobile=document.body.classList.toggle('mobile');
-  localStorage.setItem('mobile_mode',isMobile?'1':'0');
-  document.getElementById('mobile-toggle-btn').style.color=isMobile?'#D4AC0D':'';
+  const on=document.body.classList.toggle('mobile');
+  localStorage.setItem('mobile_mode',on?'1':'0');
+  document.getElementById('mobile-toggle-btn').style.color=on?'#D4AC0D':'';
 }
 
 function initMobileMode(){
-  // Auto-enable on small screens, or restore saved preference
-  const saved=localStorage.getItem('mobile_mode');
-  const autoMobile=window.innerWidth<=768;
-  if(saved==='1'||(saved===null&&autoMobile)){
-    document.body.classList.add('mobile');
-    document.getElementById('mobile-toggle-btn').style.color='#D4AC0D';
-  }
+  const applyMobile=()=>{
+    const saved=localStorage.getItem('mobile_mode');
+    const autoMobile=window.innerWidth<=768;
+    const on=saved==='1'||(saved!=='0'&&autoMobile);
+    document.body.classList.toggle('mobile',on);
+    const btn=document.getElementById('mobile-toggle-btn');
+    if(btn) btn.style.color=on?'#D4AC0D':'';
+  };
+  applyMobile();
+  window.addEventListener('resize',applyMobile);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -903,7 +941,9 @@ function recalcBuilder(){
     if(amt) totalAlc+=abv*amt;
     totalOz+=amt;
   });
-  const yieldOz=parseFloat(document.getElementById('b-yield').value)||totalOz||0;
+  const yieldField=document.getElementById('b-yield');
+  if(!yieldField.dataset.manual) yieldField.value=totalOz>0?fmtNum(totalOz,2):'';
+  const yieldOz=parseFloat(yieldField.value)||totalOz||0;
   const serveOz=parseFloat(document.getElementById('b-serve').value)||12;
   const menuPrice=parseFloat(document.getElementById('b-price').value)||0;
   const cpoz=yieldOz?totalCost/yieldOz:0;
@@ -931,7 +971,7 @@ function clearBuilder(){
   document.getElementById('b-name').value='';
   document.getElementById('b-vlabel').value='V1';
   document.getElementById('b-serve').value='12';
-  document.getElementById('b-yield').value='';
+  const yf=document.getElementById('b-yield'); yf.value=''; delete yf.dataset.manual;
   document.getElementById('b-price').value='';
   document.getElementById('b-vnotes').value='';
   builderRows=[]; addBuilderRow(); addBuilderRow(); addBuilderRow();
@@ -1130,7 +1170,9 @@ function renderModalVersions(){
     document.getElementById('rm-vlabel').value=ver.version_label||'V'+ver.version_number;
     document.getElementById('rm-vnotes').value=ver.notes||'';
     document.getElementById('rm-serve').value=ver.serve_size_oz||12;
-    document.getElementById('rm-yield').value=ver.yield_oz||'';
+    const ryf=document.getElementById('rm-yield');
+    ryf.value=ver.yield_oz||'';
+    if(ver.yield_oz) ryf.dataset.manual='1'; else delete ryf.dataset.manual;
     document.getElementById('rm-price').value=ver.menu_price||'';
   }
 }
@@ -1182,6 +1224,12 @@ function renderModalIngredients(){
       <td><button onclick="removeModalIngRow(${i})" style="color:#9BB0C8;background:none;border:none;cursor:pointer;font-size:15px">×</button></td>
     </tr>`;
   }).join('');
+  // Auto-fill yield from ingredient total if not manually set
+  const yf=document.getElementById('rm-yield');
+  if(yf&&!yf.dataset.manual){
+    const total=(ver.ingredients||[]).reduce((s,i)=>s+(parseFloat(i.amount_oz)||0),0);
+    if(total>0) yf.value=fmtNum(total,2);
+  }
   renderModalMetrics(ver);
 }
 
