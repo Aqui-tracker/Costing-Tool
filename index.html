@@ -718,22 +718,23 @@ function switchTab(tab){
 }
 
 function toggleMobileMode(){
+  window._mobileManual=true;
   const on=document.body.classList.toggle('mobile');
-  localStorage.setItem('mobile_mode',on?'1':'0');
   document.getElementById('mobile-toggle-btn').style.color=on?'#D4AC0D':'';
 }
 
 function initMobileMode(){
-  const applyMobile=()=>{
-    const saved=localStorage.getItem('mobile_mode');
-    const autoMobile=window.innerWidth<=768;
-    const on=saved==='1'||(saved!=='0'&&autoMobile);
+  // Clear any stale persisted preference
+  localStorage.removeItem('mobile_mode');
+  const applyAuto=()=>{
+    if(window._mobileManual) return; // user manually overrode — don't interfere
+    const on=window.innerWidth<=768;
     document.body.classList.toggle('mobile',on);
     const btn=document.getElementById('mobile-toggle-btn');
     if(btn) btn.style.color=on?'#D4AC0D':'';
   };
-  applyMobile();
-  window.addEventListener('resize',applyMobile);
+  applyAuto();
+  window.addEventListener('resize',applyAuto);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
