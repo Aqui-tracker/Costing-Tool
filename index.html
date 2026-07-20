@@ -135,6 +135,28 @@
   /* Bigger touch targets throughout modal */
   body.mobile .version-pill{padding:10px 16px!important;font-size:14px!important}
   body.mobile .btn-outline.btn-sm,body.mobile .btn-gold.btn-sm,body.mobile .btn-sm{padding:10px 16px!important;font-size:13px!important}
+
+  /* Builder ingredient table — show only Ingredient, Amount, Delete */
+  body.mobile #builder-tbody td:nth-child(3),
+  body.mobile #builder-tbody td:nth-child(4),
+  body.mobile #builder-tbody td:nth-child(5),
+  body.mobile #builder-tbody td:nth-child(6),
+  body.mobile #builder-tbody td:nth-child(7),
+  body.mobile #tab-builder-panel thead th:nth-child(3),
+  body.mobile #tab-builder-panel thead th:nth-child(4),
+  body.mobile #tab-builder-panel thead th:nth-child(5),
+  body.mobile #tab-builder-panel thead th:nth-child(6),
+  body.mobile #tab-builder-panel thead th:nth-child(7){display:none}
+  /* Remove fixed layout + colgroup constraints on mobile so columns fill space */
+  body.mobile #tab-builder-panel table{table-layout:auto!important}
+  body.mobile #tab-builder-panel colgroup{display:none}
+  body.mobile #tab-builder-panel .tbl th,
+  body.mobile #tab-builder-panel .tbl td{font-size:14px;padding:11px 10px}
+  /* Ingredient input fills available space */
+  body.mobile #builder-tbody td:nth-child(1){width:65%}
+  body.mobile #builder-tbody td:nth-child(2){width:25%}
+  body.mobile #builder-tbody td:last-child{width:10%}
+  body.mobile #builder-tbody input.input{font-size:15px!important;padding:10px 10px!important}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
