@@ -1747,8 +1747,9 @@ async function importInventoryCSV(csvText, fileName, mode='replace'){
       /^limes?$/i, /^lemons?$/i
     ];
     const before=items.length;
-    items=items.filter(it=>REST_KEEP.some(rx=>rx.test(it.item_name.trim())));
-    if(!items.length){showImportStatus(`No matching items found in restaurant CSV (filtered from ${before} rows). Expected: lime juice, lemon juice, sodas, watermelon, limes, lemons.`,'error');return;}
+    const kept=items.filter(it=>REST_KEEP.some(rx=>rx.test(it.item_name.trim())));
+    if(!kept.length){showImportStatus(`No matching items found in restaurant CSV (filtered from ${before} rows). Expected: lime juice, lemon juice, sodas, watermelon, limes, lemons.`,'error');return;}
+    items.length=0; items.push(...kept);
   }
 
   const modeLabel=mode==='merge'?'merge into':'replace';
