@@ -1808,11 +1808,16 @@ async function importInventoryCSV(csvText, fileName, mode='replace'){
             await sb.from('inventory').delete().eq('item_name',name);
           }
         }
-        // Merge: upsert via insert-or-update
-        const batchSize=50;
-        for(let b=0;b<items.length;b+=batchSize){
-          const batch=items.slice(b,b+batchSize);
-          await sb.from('inventory').upsert(batch,{onConflict:'item_name',ignoreDuplicates:false});
+        // Merge: fetch existing names, then insert new or update existing
+        const {data:existing}=await sb.from('inventory').select('id,item_name');
+        const existMap=new Map((existing||[]).map(e=>[e.item_name.toLowerCase(),e.id]));
+        for(const item of items){
+          const existId=existMap.get(item.item_name.toLowerCase());
+          if(existId){
+            await sb.from('inventory').update(item).eq('id',existId);
+          } else {
+            await sb.from('inventory').insert(item);
+          }
         }
       }
     }
