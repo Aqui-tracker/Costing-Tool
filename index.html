@@ -1753,10 +1753,10 @@ async function importInventoryCSV(csvText, fileName, mode='replace'){
   let toDelete=[];
   if(mode==='merge'){
     const REST_KEEP=[
-      /lime\s*juice/i, /lemon\s*juice/i,
+      /lime/i,        // lime juice, fresh lime juice, limes, lime wedge, etc.
+      /lemon/i,       // lemon juice, fresh lemon juice, lemons, etc.
       /soda/i,
       /watermelon/i,
-      /^limes?$/i, /^lemons?$/i
     ];
     const allCSVNames=items.map(i=>i.item_name);
     const kept=items.filter(it=>REST_KEEP.some(rx=>rx.test(it.item_name.trim())));
