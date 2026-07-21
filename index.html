@@ -1154,6 +1154,16 @@ function cogBadge(cog){
   return `<span class="badge badge-red">COG ${pct}</span>`;
 }
 
+function abvBadge(abv){
+  // Swirl ABV baseline ~8.8% (pure mix), typical range 10-20%
+  // ≤12% = moderate (green), 12-16% = elevated (gold), >16% = high (red)
+  if(!abv && abv!==0) return '';
+  const pct=(abv*100).toFixed(1)+'%';
+  if(abv<=.12) return `<span class="badge badge-green">ABV ${pct}</span>`;
+  if(abv<=.16) return `<span class="badge badge-gold">ABV ${pct}</span>`;
+  return `<span class="badge badge-red">ABV ${pct}</span>`;
+}
+
 function renderRecipes(list){
   const grid=document.getElementById('recipes-grid');
   document.getElementById('db-count').textContent=`${list.length} recipe${list.length!==1?'s':''}`;
@@ -1184,10 +1194,10 @@ function renderRecipes(list){
             <div style="font-size:10px;color:#D4AC0D;margin-top:4px">$${fmtNum(m.cpoz,4)}</div>
             <div style="font-size:8px;color:#9BB0C8;text-transform:uppercase;letter-spacing:.5px">Recipe $/oz</div>
           </div>
-          <div class="metric-box" style="padding:8px">
-            <div style="font-size:11px;font-weight:700;color:#B39DDB">${fmtNum((m.swirlAbv||0)*100,1)}%</div>
-            <div style="font-size:8px;color:#9BB0C8;text-transform:uppercase;letter-spacing:.5px">Swirl ABV</div>
-            <div style="font-size:11px;font-weight:700;color:#5BA4CF;margin-top:3px">${fmtNum((m.abv||0)*100,1)}%</div>
+          <div class="metric-box" style="padding:8px;text-align:center">
+            ${abvBadge(m.swirlAbv||0)}
+            <div style="font-size:8px;color:#9BB0C8;text-transform:uppercase;letter-spacing:.5px;margin-top:3px">Swirl ABV</div>
+            <div style="font-size:10px;color:#5BA4CF;margin-top:4px;font-weight:600">${fmtNum((m.abv||0)*100,1)}%</div>
             <div style="font-size:8px;color:#9BB0C8;text-transform:uppercase;letter-spacing:.5px">Recipe ABV</div>
           </div>
           <div class="metric-box" style="padding:8px">
@@ -1727,7 +1737,20 @@ async function importInventoryCSV(csvText, fileName, mode='replace'){
   }
   
   if(!items.length){showImportStatus('No valid items found. Check that item_name and cost columns exist and have data.','error');return;}
-  
+
+  // Restaurant inventory (merge mode) — only keep the items we care about
+  if(mode==='merge'){
+    const REST_KEEP=[
+      /lime\s*juice/i, /lemon\s*juice/i,
+      /soda/i,
+      /watermelon/i,
+      /^limes?$/i, /^lemons?$/i
+    ];
+    const before=items.length;
+    items=items.filter(it=>REST_KEEP.some(rx=>rx.test(it.item_name.trim())));
+    if(!items.length){showImportStatus(`No matching items found in restaurant CSV (filtered from ${before} rows). Expected: lime juice, lemon juice, sodas, watermelon, limes, lemons.`,'error');return;}
+  }
+
   const modeLabel=mode==='merge'?'merge into':'replace';
   if(!confirm(`${mode==='merge'?'Merge':'Replace'} inventory with ${items.length} items from "${fileName}"?${mode==='replace'?'\n\nThis will delete all existing inventory items.':''}`)) return;
 
