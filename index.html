@@ -671,6 +671,16 @@ function launchApp(isDemo){
   initMobileMode();
   loadInventory().then(()=>{ loadRecipes(); });
   addBuilderRow(); addBuilderRow(); addBuilderRow();
+
+  // Auto-show import zones when a file is dragged anywhere on the page
+  document.addEventListener('dragenter', e=>{
+    if(e.dataTransfer && [...(e.dataTransfer.types||[])].includes('Files')){
+      switchTab('inventory');
+      document.getElementById('inv-import-zones').classList.remove('hidden');
+      const btn=document.getElementById('import-toggle-btn');
+      if(btn){btn.style.borderColor='#D4AC0D';btn.style.color='#D4AC0D';}
+    }
+  });
 }
 
 
@@ -1739,6 +1749,8 @@ async function importInventoryCSV(csvText, fileName, mode='replace'){
   if(!items.length){showImportStatus('No valid items found. Check that item_name and cost columns exist and have data.','error');return;}
 
   // Restaurant inventory (merge mode) — only keep the items we care about
+  // toDelete = names that were in the CSV but are NOT whitelisted → remove from DB
+  let toDelete=[];
   if(mode==='merge'){
     const REST_KEEP=[
       /lime\s*juice/i, /lemon\s*juice/i,
@@ -1746,9 +1758,11 @@ async function importInventoryCSV(csvText, fileName, mode='replace'){
       /watermelon/i,
       /^limes?$/i, /^lemons?$/i
     ];
-    const before=items.length;
+    const allCSVNames=items.map(i=>i.item_name);
     const kept=items.filter(it=>REST_KEEP.some(rx=>rx.test(it.item_name.trim())));
-    if(!kept.length){showImportStatus(`No matching items found in restaurant CSV (filtered from ${before} rows). Expected: lime juice, lemon juice, sodas, watermelon, limes, lemons.`,'error');return;}
+    if(!kept.length){showImportStatus(`No matching items found in restaurant CSV (filtered from ${allCSVNames.length} rows). Expected: lime juice, lemon juice, sodas, watermelon, limes, lemons.`,'error');return;}
+    const keptNames=new Set(kept.map(i=>i.item_name.toLowerCase()));
+    toDelete=allCSVNames.filter(n=>!keptNames.has(n.toLowerCase()));
     items.length=0; items.push(...kept);
   }
 
@@ -1764,8 +1778,12 @@ async function importInventoryCSV(csvText, fileName, mode='replace'){
         const newInv=items.map(i=>({id:uuid4(),created_at:now,updated_at:now,...i}));
         localStorage.setItem('ldb_inventory',JSON.stringify(newInv));
       } else {
-        // Merge: upsert by item_name
+        // Merge: upsert by item_name, also delete filtered-out restaurant items
         let current=JSON.parse(localStorage.getItem('ldb_inventory')||'[]');
+        if(toDelete.length){
+          const delSet=new Set(toDelete.map(n=>n.toLowerCase()));
+          current=current.filter(c=>!delSet.has(c.item_name.toLowerCase()));
+        }
         items.forEach(incoming=>{
           const existIdx=current.findIndex(c=>c.item_name.toLowerCase()===incoming.item_name.toLowerCase());
           if(existIdx>=0){
@@ -1784,6 +1802,12 @@ async function importInventoryCSV(csvText, fileName, mode='replace'){
           await sb.from('inventory').insert(items.slice(b,b+batchSize));
         }
       } else {
+        // Delete items that were in the restaurant CSV but got filtered out
+        if(toDelete.length){
+          for(const name of toDelete){
+            await sb.from('inventory').delete().eq('item_name',name);
+          }
+        }
         // Merge: upsert via insert-or-update
         const batchSize=50;
         for(let b=0;b<items.length;b+=batchSize){
