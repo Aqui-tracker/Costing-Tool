@@ -1159,19 +1159,26 @@ function calcVersionMetrics(ver){
 function cogBadge(cog){
   if(cog===null) return '';
   const pct=(cog*100).toFixed(1)+'%';
-  if(cog<=.20) return `<span class="badge badge-green">COG ${pct}</span>`;
-  if(cog<=.25) return `<span class="badge badge-gold">COG ${pct}</span>`;
+  // Goal: 18-20%. Under is great, over is bad.
+  if(cog<=.18) return `<span class="badge badge-green">COG ${pct}</span>`;
+  if(cog<=.20) return `<span class="badge badge-gold">COG ${pct}</span>`;
   return `<span class="badge badge-red">COG ${pct}</span>`;
 }
 
-function abvBadge(abv){
-  // Swirl ABV baseline ~8.8% (pure mix), typical range 10-20%
-  // ≤12% = moderate (green), 12-16% = elevated (gold), >16% = high (red)
+function abvBadge(abv, category){
+  // Craft goal: 14% | All others goal: 11-12%
   if(!abv && abv!==0) return '';
   const pct=(abv*100).toFixed(1)+'%';
-  if(abv<=.12) return `<span class="badge badge-green">ABV ${pct}</span>`;
-  if(abv<=.16) return `<span class="badge badge-gold">ABV ${pct}</span>`;
-  return `<span class="badge badge-red">ABV ${pct}</span>`;
+  const isCraft=(category||'').toLowerCase()==='craft';
+  if(isCraft){
+    if(abv<=.14) return `<span class="badge badge-green">ABV ${pct}</span>`;
+    if(abv<=.16) return `<span class="badge badge-gold">ABV ${pct}</span>`;
+    return `<span class="badge badge-red">ABV ${pct}</span>`;
+  } else {
+    if(abv<=.12) return `<span class="badge badge-green">ABV ${pct}</span>`;
+    if(abv<=.14) return `<span class="badge badge-gold">ABV ${pct}</span>`;
+    return `<span class="badge badge-red">ABV ${pct}</span>`;
+  }
 }
 
 function renderRecipes(list){
@@ -1205,7 +1212,7 @@ function renderRecipes(list){
             <div style="font-size:8px;color:#9BB0C8;text-transform:uppercase;letter-spacing:.5px">Recipe $/oz</div>
           </div>
           <div class="metric-box" style="padding:8px;text-align:center">
-            ${abvBadge(m.swirlAbv||0)}
+            ${abvBadge(m.swirlAbv||0, group.category)}
             <div style="font-size:8px;color:#9BB0C8;text-transform:uppercase;letter-spacing:.5px;margin-top:3px">Swirl ABV</div>
             <div style="font-size:10px;color:#5BA4CF;margin-top:4px;font-weight:600">${fmtNum((m.abv||0)*100,1)}%</div>
             <div style="font-size:8px;color:#9BB0C8;text-transform:uppercase;letter-spacing:.5px">Recipe ABV</div>
