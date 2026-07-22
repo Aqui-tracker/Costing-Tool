@@ -1809,14 +1809,17 @@ async function importInventoryCSV(csvText, fileName, mode='replace'){
           }
         }
         // Merge: fetch existing names, then insert new or update existing
-        const {data:existing}=await sb.from('inventory').select('id,item_name');
+        const {data:existing,error:fetchErr}=await sb.from('inventory').select('id,item_name');
+        if(fetchErr) throw fetchErr;
         const existMap=new Map((existing||[]).map(e=>[e.item_name.toLowerCase(),e.id]));
         for(const item of items){
           const existId=existMap.get(item.item_name.toLowerCase());
           if(existId){
-            await sb.from('inventory').update(item).eq('id',existId);
+            const {error:upErr}=await sb.from('inventory').update(item).eq('id',existId);
+            if(upErr) throw new Error(`Update failed for "${item.item_name}": ${upErr.message}`);
           } else {
-            await sb.from('inventory').insert(item);
+            const {error:insErr}=await sb.from('inventory').insert(item);
+            if(insErr) throw new Error(`Insert failed for "${item.item_name}": ${insErr.message}`);
           }
         }
       }
@@ -1825,7 +1828,7 @@ async function importInventoryCSV(csvText, fileName, mode='replace'){
     document.getElementById('inv-import-zones').classList.add('hidden');
     document.getElementById('import-toggle-btn').style.borderColor='';
     document.getElementById('import-toggle-btn').style.color='';
-    const added=mode==='merge'?`merged ${items.length} items (new items added, existing prices updated)`:`replaced all inventory with ${items.length} items`;
+    const added=mode==='merge'?`merged ${items.length} items: ${items.map(i=>i.item_name).join(', ')}`:`replaced all inventory with ${items.length} items`;
     showImportStatus(`✓ ${fileName}: ${added}`,'success');
     setTimeout(()=>document.getElementById('inv-import-status').classList.add('hidden'),6000);
   } catch(err){
