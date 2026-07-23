@@ -485,7 +485,7 @@
               <div class="metric-box"><div class="metric-val" id="s-total-cost">$0.00</div><div class="metric-lbl">Total Recipe Cost</div></div>
               <div class="metric-box"><div class="metric-val" id="s-cpoz">$0.0000</div><div class="metric-lbl">Cost per oz</div></div>
               <div class="metric-box abv-metric-toggle" id="s-abv-box" onclick="toggleBuilderABV()" title="Click to see ABV breakdown"><div class="metric-val" id="s-abv">0.0%</div><div class="metric-lbl">Recipe ABV <span style="font-size:9px;color:#5BA4CF" id="s-abv-arrow">▶ details</span></div></div>
-              <div class="metric-box"><div class="metric-val" id="s-abv-sw" style="color:#B39DDB">0.0%</div><div class="metric-lbl">Swirl ABV <span style="font-size:9px;color:#9BB0C8">(4 oz recipe + 11.5 oz marg)</span></div></div>
+              <div class="metric-box"><div class="metric-val" id="s-abv-sw" style="color:#B39DDB">0.0%</div><div class="metric-lbl">Swirl ABV <span style="font-size:9px;color:#9BB0C8">(4 oz recipe + 12 oz marg)</span></div></div>
               <div id="abv-builder-breakdown" class="hidden"></div>
               <div class="metric-box"><div class="metric-val" id="s-drink-cost">$0.00</div><div class="metric-lbl">Swirl Drink Cost (incl. marg mix)</div></div>
               <div class="metric-box"><div class="metric-val" id="s-cog">—</div><div class="metric-lbl">Swirl COG %</div></div>
@@ -557,7 +557,7 @@ function uuid4(){
 const MARG_ABV    = 0.11883152871838547; // ABV  (AF65)
 const MARG_CPOZ   = 0.08583202856998044; // Cost/oz (AF63)
 const SWIRL_REC_OZ = 4;                  // oz of recipe mix per swirl batch
-const SWIRL_MIX_OZ = 11.5;              // oz of margarita C+ per swirl batch
+const SWIRL_MIX_OZ = 12;                // oz of margarita C+ per swirl batch
 const SWIRL_TOTAL  = SWIRL_REC_OZ + SWIRL_MIX_OZ; // 15.5 oz
 
 function calcSwirlABV(recipeABV){
@@ -1385,7 +1385,7 @@ function renderModalMetrics(ver){
       <div style="margin-top:6px;padding-top:6px;border-top:1px solid #2C3E50">
         <div style="font-size:9px;color:#9BB0C8;text-transform:uppercase;letter-spacing:.5px">Swirl ABV</div>
         <div style="font-size:15px;font-weight:700;color:#B39DDB">${fmtNum((m.swirlAbv||0)*100,2)}%</div>
-        <div style="font-size:9px;color:#9BB0C8;margin-top:1px">4 oz recipe + 11.5 oz marg</div>
+        <div style="font-size:9px;color:#9BB0C8;margin-top:1px">4 oz recipe + 12 oz marg</div>
       </div>
     </div>
     <div class="metric-box">
