@@ -558,7 +558,99 @@ const MARG_ABV    = 0.11883152871838547; // ABV  (AF65)
 const MARG_CPOZ   = 0.08583202856998044; // Cost/oz (AF63)
 const SWIRL_REC_OZ = 4;                  // oz of recipe mix per swirl batch
 const SWIRL_MIX_OZ = 12;                // oz of margarita C+ per swirl batch
-const SWIRL_TOTAL  = SWIRL_REC_OZ + SWIRL_MIX_OZ; // 15.5 oz
+const SWIRL_TOTAL  = SWIRL_REC_OZ + SWIRL_MIX_OZ;
+
+// ── ABV LOOKUP TABLE ──────────────────────────────────────────────────────
+// Keys are lowercase substrings; longer keys matched first (more specific wins)
+const ABV_LOOKUP = {
+  // Brandy / Cognac
+  'brandy - st remy':0.40,'cognac - courvoisier':0.40,
+  'cognac - hennessy':0.40,'cognac - remy martin v':0.40,
+  // Gin
+  'gin - bartons':0.40,'gin - bombay bramble':0.375,
+  'gin - bombay sapphire':0.47,'gin - hendricks':0.414,
+  "gin - nolet's silver":0.476,'gin - sipsmith 58':0.58,
+  'gin - sipsmith london dry':0.416,
+  // Liqueurs / Bitters / Vermouth
+  'liquor - angostura bitters':0.447,'liquor - blue curacao':0.25,
+  'liquor - bols liquer - strawberry':0.17,'liquor - cointreau':0.40,
+  'liquor - dekuyper creme de cacao dark':0.30,'liquor - disaronno amaretto':0.28,
+  'liquor - giffard apricot liqueur':0.25,'liquor - grand marnier':0.40,
+  'liquor - grapefruit bitters':0.30,'liquor - licor 43':0.31,
+  'liquor - midori':0.20,'liquor - naranja orange':0.40,
+  'liquor - noilly pratt dry vermouth':0.18,'liquor - noilly pratt sweet vermouth':0.16,
+  'liquor - patron citronge orange':0.35,
+  'liquor - soonhari peach soju':0.12,'liquor - soonhari strawberry soju':0.12,
+  'liquor - franzia burgundy wine':0.11,
+  // Rum
+  'rum - bacardi dragon berry':0.35,'rum - bacardi pineapple':0.35,
+  'rum - bacardi 1l':0.40,'rum - bacardi':0.40,
+  'rum - blue chair coconut':0.21,'rum - captain morgan apple':0.35,
+  'rum - captain morgan spiced':0.35,'rum - mount gay eclipse gold':0.40,
+  // Tequila
+  'tequila - 21 seeds valencia orange':0.35,'tequila - cabo wabo':0.40,
+  'tequila - casamigos (blanco)':0.40,'tequila - casamigos (rep)':0.40,
+  'tequila - cazadores':0.40,'tequila - don julio (anejo)':0.40,
+  'tequila - don julio (blanco)':0.40,'tequila - don julio (rep)':0.40,
+  'tequila - don julio - 70th anejo claro':0.35,'tequila - dulce vida grapefruit':0.35,
+  'tequila - gran centenario (anejo)':0.40,'tequila - gran centenario (plata)':0.40,
+  'tequila - gran centenario (rep)':0.40,'tequila - gran malo spicy tamarindo':0.35,
+  'tequila - herradura (silver)':0.40,'tequila - mezcal - union uno joven':0.40,
+  'tequila - montezuma gold':0.40,'tequila - patron (rep)':0.40,
+  'tequila - patron (silver)':0.40,'tequila - patron xo cafe':0.35,
+  'tequila - sauza hornitos':0.40,'tequila - teremana blanco':0.40,
+  'tequila - teremana rep':0.40,
+  // Vodka (specific before generic)
+  'vodka - grey goose white peach & rosemary':0.30,
+  'vodka - grey goose (la poire)':0.40,'vodka - grey goose':0.40,
+  'vodka - ketel botanical cucumber':0.30,'vodka - ketel botanical grapefruit & rose':0.30,
+  'vodka - ketel botanical peach & orange blossom':0.30,'vodka - ketel one':0.40,
+  'vodka - absolut pear':0.40,'vodka - barton':0.40,'vodka - belvedere organic':0.40,
+  'vodka - deep eddy lemon':0.35,'vodka - effen black cherry':0.375,
+  'vodka - smirnoff vanilla':0.35,'vodka - titos':0.40,
+  // Whiskey
+  'whiskey - american born peach':0.35,'whiskey - applejack':0.40,
+  'whiskey - bulleit bourbon':0.45,'whiskey - crown royal':0.40,
+  'whiskey - howler head':0.40,'whiskey - jack daniels':0.40,
+  'whiskey - jameson orange':0.30,'whiskey - jameson':0.40,
+  'whiskey - knob creek bourbon':0.50,'whiskey - makers mark 46':0.47,
+  'whiskey - makers mark':0.45,'whiskey - west side water':0.40,
+  // Beer
+  'beer -  fire 805':0.047,'beer - fire 805':0.047,'beer - coors light':0.042,
+  'beer - corona (non-alcoholic)':0.00,'beer - corona extra':0.046,
+  'beer - excelsior imperial mango':0.091,'beer - heineken 0.0':0.00,
+  'beer - lagunitas ipa':0.062,'beer - modelo especial':0.044,
+  'beer - modelo negra':0.054,'beer - pacifico':0.044,
+  'beer - voodoo juicy haze':0.075,'beer - white claw':0.05,
+  // Wine
+  'wine - cedar brook - cabernet sauvignon':0.135,'wine - cedar brook - chardonnay':0.13,
+  'wine - coastal vines cellars brut':0.115,'wine - coppola - diamond pinot noir':0.135,
+  'wine - josh cellars - sauvignon blanc':0.125,'wine - sonoma cutrer chardonnay':0.135,
+  'wine - franzia - chard':0.11,
+};
+
+// Match longest key first so specific names win over generic ones
+const _abvKeys=Object.keys(ABV_LOOKUP).sort((a,b)=>b.length-a.length);
+function lookupABV(name){
+  const n=(name||'').toLowerCase().trim();
+  for(const k of _abvKeys){ if(n.includes(k)) return ABV_LOOKUP[k]; }
+  return null;
+}
+
+// Returns true if item looks alcoholic but has no ABV set (needs manual input)
+function needsAbvFlag(item){
+  if(item.abv!=null) return false;
+  const n=(item.item_name||'').toLowerCase();
+  const skip=['syrup','grenadine','concentrate','puree','tonic','juice','oat milk',
+    'olives','cherries','powder','soda','water','matcha','sangria (ing','zero proof',
+    'hornitos cadillac','paradise (ing','blueberry guava','manhattan (ing',
+    'house margarita','pineapple dole','mango matcha','limeade','ginger beer'];
+  if(skip.some(w=>n.includes(w))) return false;
+  const alcohol=['gin','rum','tequila','vodka','whiskey','cognac','brandy','mezcal',
+    'soju','bourbon','scotch','beer','wine','cointreau','amaretto','curacao',
+    'vermouth','liqueur','midori','licor','grand marnier','bitters'];
+  return alcohol.some(w=>n.includes(w));
+}
 
 function calcSwirlABV(recipeABV){
   return (SWIRL_REC_OZ * recipeABV + SWIRL_MIX_OZ * MARG_ABV) / SWIRL_TOTAL;
@@ -783,8 +875,21 @@ async function loadInventory(){
     await Promise.all(pureeFix.map(i=>sb.from('inventory').update({package_size_oz:26}).eq('id',i.id)));
     pureeFix.forEach(i=>{ i.package_size_oz=26; });
   }
+  // Auto-fill ABV from lookup for any items missing it
+  await syncAbvFromLookup();
   renderInventory();
   populateCatFilter();
+}
+
+async function syncAbvFromLookup(){
+  const toUpdate=inventory.filter(i=>i.abv==null&&lookupABV(i.item_name)!==null);
+  if(!toUpdate.length) return;
+  await Promise.all(toUpdate.map(i=>{
+    const abv=lookupABV(i.item_name);
+    i.abv=abv;
+    if(demoMode) return Promise.resolve();
+    return sb.from('inventory').update({abv}).eq('id',i.id);
+  }));
 }
 
 function costPerOz(item){
@@ -800,7 +905,7 @@ function invItemRow(item){
     <td style="color:#9BB0C8">${item.package_size_oz?fmtNum(item.package_size_oz,3)+' oz':'<span style="color:#E57373">?</span>'}</td>
     <td>${item.unit_cost?'$'+fmtNum(item.unit_cost,2):'—'}</td>
     <td style="color:#D4AC0D;font-weight:600">${cpoz?'$'+fmtNum(cpoz,4):'<span style="color:#E57373">Need pkg size</span>'}</td>
-    <td style="color:#5BA4CF">${item.abv!=null?fmtNum(item.abv*100,1)+'%':'<span style="color:#9BB0C8">—</span>'}</td>
+    <td style="color:#5BA4CF">${item.abv!=null?fmtNum(item.abv*100,1)+'%':needsAbvFlag(item)?'<span style="color:#E57373">Need ABV</span>':'<span style="color:#9BB0C8">—</span>'}</td>
     <td style="color:#9BB0C8;font-size:12px">${esc(item.notes||'')}</td>
     <td><div class="flex gap-1">
       <button onclick="editIngredient('${item.id}')" class="btn-outline btn-sm">Edit</button>
@@ -1742,6 +1847,8 @@ async function importInventoryCSV(csvText, fileName, mode='replace'){
       const n=parseFloat(raw);
       if(!isNaN(n)) abv=n>1?n/100:n;
     }
+    // Auto-fill ABV from lookup if CSV didn't supply one
+    if(abv===null){ const looked=lookupABV(name); if(looked!==null) abv=looked; }
     items.push({
       item_name:name,
       category:iCat>=0?(row[iCat]||'').trim():'',
