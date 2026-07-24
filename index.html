@@ -882,7 +882,11 @@ async function loadInventory(){
 }
 
 async function syncAbvFromLookup(){
-  const toUpdate=inventory.filter(i=>i.abv==null&&lookupABV(i.item_name)!==null);
+  // Update any item where the lookup has a value that differs from what's stored
+  const toUpdate=inventory.filter(i=>{
+    const looked=lookupABV(i.item_name);
+    return looked!==null && i.abv!==looked;
+  });
   if(!toUpdate.length) return;
   await Promise.all(toUpdate.map(i=>{
     const abv=lookupABV(i.item_name);
