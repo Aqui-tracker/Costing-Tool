@@ -629,6 +629,29 @@ const ABV_LOOKUP = {
   'wine - franzia - chard':0.11,
 };
 
+// ── PACKAGE SIZE LOOKUP (oz per unit) ────────────────────────────────────
+const PKG_SIZE_LOOKUP = {
+  // Beers — all standard 12 oz bottles/cans
+  'beer -  fire 805':12,'beer - fire 805':12,'beer - coors light':12,
+  'beer - corona (non-alcoholic)':12,'beer - corona extra':12,
+  'beer - excelsior imperial mango':12,'beer - heineken 0.0':12,
+  'beer - lagunitas ipa':12,'beer - modelo especial':12,
+  'beer - modelo negra':12,'beer - pacifico':12,
+  'beer - voodoo juicy haze':12,'beer - white claw':12,
+  // White Claw
+  'beer - white claw':12,
+  // Spirits — standard bottle sizes
+  'bottle (750 milliliters)':25.36,'bottle (liter)':33.814,
+  'bottle (375 milliliters)':12.68,
+};
+
+const _pkgKeys=Object.keys(PKG_SIZE_LOOKUP).sort((a,b)=>b.length-a.length);
+function lookupPkgSize(name){
+  const n=(name||'').toLowerCase().trim();
+  for(const k of _pkgKeys){ if(n.includes(k)) return PKG_SIZE_LOOKUP[k]; }
+  return null;
+}
+
 // Match longest key first so specific names win over generic ones
 const _abvKeys=Object.keys(ABV_LOOKUP).sort((a,b)=>b.length-a.length);
 function lookupABV(name){
@@ -875,10 +898,26 @@ async function loadInventory(){
     await Promise.all(pureeFix.map(i=>sb.from('inventory').update({package_size_oz:26}).eq('id',i.id)));
     pureeFix.forEach(i=>{ i.package_size_oz=26; });
   }
-  // Auto-fill ABV from lookup for any items missing it
+  // Auto-correct package sizes and ABV from lookup tables
+  await syncPkgSizeFromLookup();
   await syncAbvFromLookup();
   renderInventory();
   populateCatFilter();
+}
+
+async function syncPkgSizeFromLookup(){
+  // Correct package sizes where lookup has a definitive answer and stored value differs
+  const toUpdate=inventory.filter(i=>{
+    const looked=lookupPkgSize(i.item_name);
+    return looked!==null && i.package_size_oz!==looked;
+  });
+  if(!toUpdate.length) return;
+  await Promise.all(toUpdate.map(i=>{
+    const package_size_oz=lookupPkgSize(i.item_name);
+    i.package_size_oz=package_size_oz;
+    if(demoMode) return Promise.resolve();
+    return sb.from('inventory').update({package_size_oz}).eq('id',i.id);
+  }));
 }
 
 async function syncAbvFromLookup(){
@@ -1817,6 +1856,7 @@ async function importInventoryCSV(csvText, fileName, mode='replace'){
   const iPrevCount=ci(['prev_count','previous_count']);
   const iAbv=ci(['abv','alcohol']);
   const iNotes=ci(['notes','note','comment']);
+  const iReportBy=ci(['report_by','report','unit_type','unit_t','unit']);
   
   // Determine cost method
   const useValueCount=(iCostDirect<0 && iValue>=0 && iCount>=0);
@@ -1844,7 +1884,18 @@ async function importInventoryCSV(csvText, fileName, mode='replace'){
     }
     if(!unitCost||unitCost<=0) continue;
     
-    const size=iSize>=0?parseFloat(row[iSize])||null:null;
+    let size=iSize>=0?parseFloat(row[iSize])||null:null;
+    // Try to parse size from "Report By" column (e.g. "Bottle (750 Milliliters)")
+    if(!size && iReportBy>=0){
+      const rb=(row[iReportBy]||'').trim();
+      const mlM=rb.match(/\((\d+(?:\.\d+)?)\s*milli?li?t/i);
+      if(mlM) size=Math.round(parseFloat(mlM[1])/29.5735*1000)/1000;
+      else if(/\bliter\b|\blitre\b/i.test(rb)) size=33.814;
+      else if(/\bquart\b/i.test(rb)) size=32;
+      else if(/\bounce\b/i.test(rb)&&!/fl/i.test(rb)) size=1;
+    }
+    // Fall back to name-based lookup (beers, etc.)
+    if(!size){ const looked=lookupPkgSize(name); if(looked) size=looked; }
     let abv=null;
     if(iAbv>=0){
       const raw=(row[iAbv]||'').replace('%','').trim();
