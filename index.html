@@ -631,6 +631,10 @@ const ABV_LOOKUP = {
 
 // ── PACKAGE SIZE LOOKUP (oz per unit) ────────────────────────────────────
 const PKG_SIZE_LOOKUP = {
+  // Re'al syrups — 16.9 oz bottles
+  "re'al":16.9,
+  // Purées — 23 oz
+  'puree':23,
   // Beers — all standard 12 oz bottles/cans
   'beer -  fire 805':12,'beer - fire 805':12,'beer - coors light':12,
   'beer - corona (non-alcoholic)':12,'beer - corona extra':12,
@@ -893,10 +897,10 @@ async function loadInventory(){
   const {data}=await sb.from('inventory').select('*').order('item_name');
   inventory=data||[];
   // Fix puree package sizes — set all puree items to 26 oz if not already
-  const pureeFix=inventory.filter(i=>(i.category||'').toLowerCase().includes('puree')&&i.package_size_oz!==26);
+  const pureeFix=inventory.filter(i=>(i.item_name||'').toLowerCase().includes('puree')&&i.package_size_oz!==23);
   if(pureeFix.length){
-    await Promise.all(pureeFix.map(i=>sb.from('inventory').update({package_size_oz:26}).eq('id',i.id)));
-    pureeFix.forEach(i=>{ i.package_size_oz=26; });
+    await Promise.all(pureeFix.map(i=>sb.from('inventory').update({package_size_oz:23}).eq('id',i.id)));
+    pureeFix.forEach(i=>{ i.package_size_oz=23; });
   }
   // Auto-correct package sizes and ABV from lookup tables
   await syncPkgSizeFromLookup();
