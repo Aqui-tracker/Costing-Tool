@@ -1290,8 +1290,11 @@ function calcVersionMetrics(ver){
   let totalCost=0,totalAlc=0;
   (ver.ingredients||[]).forEach(i=>{
     const amt=parseFloat(i.amount_oz)||0;
-    const cpoz=parseFloat(i.cost_per_oz_snapshot)||0;
-    const abv=parseFloat(i.abv_snapshot)||0;
+    // Always prefer live inventory price so updated pkg sizes/costs are reflected
+    const liveItem=findInventoryItem(i.ingredient_name);
+    const liveCpoz=liveItem?costPerOz(liveItem):null;
+    const cpoz=liveCpoz!=null?liveCpoz:(parseFloat(i.cost_per_oz_snapshot)||0);
+    const abv=liveItem&&liveItem.abv!=null?liveItem.abv:(parseFloat(i.abv_snapshot)||0);
     totalCost+=cpoz*amt; totalAlc+=abv*amt;
   });
   const yieldOz=parseFloat(ver.yield_oz)||0;
