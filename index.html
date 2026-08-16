@@ -1270,6 +1270,19 @@ async function loadRecipes(){
       ...v,ingredients:(ings||[]).filter(i=>i.version_id===v.id)
     }))
   }));
+  // Auto-correct serve size for Swirl recipes to 16 oz (4 recipe + 12 marg)
+  const swirlFixes=[];
+  recipes.forEach(g=>{
+    if((g.category||'').toLowerCase()==='swirl'){
+      g.versions.forEach(v=>{
+        if((v.serve_size_oz||12)!==16){
+          v.serve_size_oz=16;
+          if(!demoMode) swirlFixes.push(sb.from('recipe_versions').update({serve_size_oz:16}).eq('id',v.id));
+        }
+      });
+    }
+  });
+  if(swirlFixes.length) await Promise.all(swirlFixes);
   filterRecipes();
 }
 
@@ -1411,7 +1424,8 @@ function renderModalVersions(){
   if(ver){
     document.getElementById('rm-vlabel').value=ver.version_label||'V'+ver.version_number;
     document.getElementById('rm-vnotes').value=ver.notes||'';
-    document.getElementById('rm-serve').value=ver.serve_size_oz||12;
+    const isSwirl=(modalRecipeGroup.category||'').toLowerCase()==='swirl';
+    document.getElementById('rm-serve').value=ver.serve_size_oz||(isSwirl?16:12);
     const ryf=document.getElementById('rm-yield');
     ryf.value=ver.yield_oz||'';
     if(ver.yield_oz) ryf.dataset.manual='1'; else delete ryf.dataset.manual;
@@ -1669,7 +1683,7 @@ async function createNewRecipe(){
   const err=document.getElementById('nr-error');
   if(!name){err.textContent='Name is required';err.classList.remove('hidden');return;}
   const {data:g}=await sb.from('recipe_groups').insert({name,category:cat}).select().single();
-  await sb.from('recipe_versions').insert({group_id:g.id,version_number:1,version_label:vlabel,is_active:true,serve_size_oz:12});
+  await sb.from('recipe_versions').insert({group_id:g.id,version_number:1,version_label:vlabel,is_active:true,serve_size_oz:cat==='Swirl'?16:12});
   closeNewRecipeModal();
   await loadRecipes();
   openRecipeModal(g.id);
