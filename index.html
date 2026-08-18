@@ -318,7 +318,7 @@
       <div><label class="section-header block mb-1">Recipe Name *</label><input id="nr-name" class="input" placeholder="e.g. Paradise Swirl Base"/></div>
       <div>
         <label class="section-header block mb-1">Category</label>
-        <select id="nr-cat" class="input"><option value="Swirl">Swirl</option><option value="Rocks">Rocks</option><option value="Craft">Craft</option><option value="Signature">Signature</option><option value="Sangria">Sangria</option><option value="Mocktail">Mocktail</option><option value="Other">Other</option></select>
+        <select id="nr-cat" class="input"><option value="Swirl">Swirl</option><option value="Rocks">Rocks</option><option value="Craft">Craft</option><option value="Signature">Signature</option><option value="Sangria">Sangria</option><option value="Mocktail">Mocktail</option><option value="Martini">Martini</option><option value="Other">Other</option></select>
       </div>
       <div><label class="section-header block mb-1">First Version Label</label><input id="nr-vlabel" class="input" value="V1" placeholder="V1"/></div>
     </div>
@@ -522,6 +522,7 @@
           <p style="color:#9BB0C8;font-size:13px;margin-top:2px">All saved recipes with multiple versions. Set one version as active per recipe.</p>
         </div>
         <button onclick="openNewRecipeModal()" class="btn-gold">+ New Recipe</button>
+        <button onclick="importNewRecipes()" class="btn-gold" style="background:#1E3A5F;border-color:#5BA4CF;color:#5BA4CF" id="import-2026-btn">⬆ Import 2026 Recipes</button>
       </div>
       <div class="card p-4 mb-4 flex gap-3 items-center flex-wrap">
         <div style="flex:1;min-width:200px"><input id="db-search" class="input" placeholder="🔍  Search recipes..." oninput="filterRecipes()"/></div>
@@ -2032,6 +2033,375 @@ function showImportStatus(msg,type){
   el.style.borderLeftColor=type==='error'?'#E57373':type==='success'?'#4CAF50':'#5BA4CF';
   el.style.color=type==='error'?'#E57373':type==='success'?'#4CAF50':'#E8ECF0';
   el.classList.remove('hidden');
+}
+
+
+// ── New Recipe Import (2026 Spring/Winter) ──────────────────────────────
+const NEW_2026_RECIPES = [
+  {
+    "name": "Strawberry Coconut Swirl Base",
+    "category": "Swirl",
+    "serve_size_oz": 16,
+    "menu_price": 8.75,
+    "ingredients": [
+      {
+        "ingredient_name": "Bacardi Light Rum",
+        "amount_oz": 16.0,
+        "cost_per_oz_snapshot": 0.400177,
+        "abv_snapshot": 0.4
+      },
+      {
+        "ingredient_name": "Soon Hari Strawberry Soju",
+        "amount_oz": 32.0,
+        "cost_per_oz_snapshot": 0.315457,
+        "abv_snapshot": 0.12
+      },
+      {
+        "ingredient_name": "Coco Real Cream of Coconut",
+        "amount_oz": 16.0,
+        "cost_per_oz_snapshot": 0.205325,
+        "abv_snapshot": null
+      },
+      {
+        "ingredient_name": "Perfect Puree Straberry",
+        "amount_oz": 4.0,
+        "cost_per_oz_snapshot": 0.58037,
+        "abv_snapshot": null
+      },
+      {
+        "ingredient_name": "Voila! Lime Juice",
+        "amount_oz": 4.0,
+        "cost_per_oz_snapshot": 0.140625,
+        "abv_snapshot": null
+      },
+      {
+        "ingredient_name": "Water",
+        "amount_oz": 16.0,
+        "cost_per_oz_snapshot": 0.0,
+        "abv_snapshot": null
+      }
+    ]
+  },
+  {
+    "name": "Hennessy Blackberry Swirl Base",
+    "category": "Swirl",
+    "serve_size_oz": 16,
+    "menu_price": 8.75,
+    "ingredients": [
+      {
+        "ingredient_name": "Hennessy Cognac",
+        "amount_oz": 4.0,
+        "cost_per_oz_snapshot": 1.183082,
+        "abv_snapshot": 0.4
+      },
+      {
+        "ingredient_name": "Courvoisier Cognac",
+        "amount_oz": 10.0,
+        "cost_per_oz_snapshot": 1.027802,
+        "abv_snapshot": 0.4
+      },
+      {
+        "ingredient_name": "Perfect Puree Hibiscus",
+        "amount_oz": 2.0,
+        "cost_per_oz_snapshot": 0.6932,
+        "abv_snapshot": null
+      },
+      {
+        "ingredient_name": "Perfect Puree Blackberry",
+        "amount_oz": 4.0,
+        "cost_per_oz_snapshot": 0.787037,
+        "abv_snapshot": null
+      },
+      {
+        "ingredient_name": "Re'al Ginger Syrup",
+        "amount_oz": 0.5,
+        "cost_per_oz_snapshot": 0.281065,
+        "abv_snapshot": null
+      },
+      {
+        "ingredient_name": "Voila! Lime Juice",
+        "amount_oz": 1.0,
+        "cost_per_oz_snapshot": 0.140625,
+        "abv_snapshot": null
+      },
+      {
+        "ingredient_name": "Starry Lemon Lime Soda",
+        "amount_oz": 12.0,
+        "cost_per_oz_snapshot": 0.036234,
+        "abv_snapshot": null
+      },
+      {
+        "ingredient_name": "Aqui Lemonade",
+        "amount_oz": 14.0,
+        "cost_per_oz_snapshot": 0.039633,
+        "abv_snapshot": null
+      }
+    ]
+  },
+  {
+    "name": "HM Mango Matcha w/Tito's Craft",
+    "category": "Craft",
+    "serve_size_oz": 16.5,
+    "menu_price": 7.75,
+    "ingredients": [
+      {
+        "ingredient_name": "Tito's Vodka",
+        "amount_oz": 1.5,
+        "cost_per_oz_snapshot": 0.576457,
+        "abv_snapshot": 0.4
+      },
+      {
+        "ingredient_name": "Cointreau",
+        "amount_oz": 0.5,
+        "cost_per_oz_snapshot": 0.217096,
+        "abv_snapshot": 0.4
+      },
+      {
+        "ingredient_name": "Mango Macha Base",
+        "amount_oz": 2.5,
+        "cost_per_oz_snapshot": 0.126995,
+        "abv_snapshot": 0.041143
+      },
+      {
+        "ingredient_name": "Water",
+        "amount_oz": 1.0,
+        "cost_per_oz_snapshot": 0.0,
+        "abv_snapshot": null
+      }
+    ]
+  },
+  {
+    "name": "HM Mango Matcha  w/Hennessy Craft",
+    "category": "Craft",
+    "serve_size_oz": 16.5,
+    "menu_price": 12.25,
+    "ingredients": [
+      {
+        "ingredient_name": "Hennessy",
+        "amount_oz": 1.5,
+        "cost_per_oz_snapshot": 1.183082,
+        "abv_snapshot": 0.4
+      },
+      {
+        "ingredient_name": "Cointreau",
+        "amount_oz": 0.5,
+        "cost_per_oz_snapshot": 0.217096,
+        "abv_snapshot": 0.4
+      },
+      {
+        "ingredient_name": "Mango Macha Base",
+        "amount_oz": 2.5,
+        "cost_per_oz_snapshot": 0.126995,
+        "abv_snapshot": 0.041143
+      },
+      {
+        "ingredient_name": "Water",
+        "amount_oz": 1.0,
+        "cost_per_oz_snapshot": 0.0,
+        "abv_snapshot": null
+      }
+    ]
+  },
+  {
+    "name": "HM Gran Centenario Blackberry Craft",
+    "category": "Craft",
+    "serve_size_oz": 16.5,
+    "menu_price": 14.75,
+    "ingredients": [
+      {
+        "ingredient_name": "Gran Centenario Rep Tequila",
+        "amount_oz": 2.0,
+        "cost_per_oz_snapshot": 1.092271,
+        "abv_snapshot": 0.4
+      },
+      {
+        "ingredient_name": "Cointreau",
+        "amount_oz": 0.75,
+        "cost_per_oz_snapshot": 0.217096,
+        "abv_snapshot": 0.4
+      },
+      {
+        "ingredient_name": "Aqui Lemonade",
+        "amount_oz": 1.5,
+        "cost_per_oz_snapshot": 0.039633,
+        "abv_snapshot": null
+      },
+      {
+        "ingredient_name": "Blackberry Puree",
+        "amount_oz": 0.5,
+        "cost_per_oz_snapshot": 0.787037,
+        "abv_snapshot": null
+      },
+      {
+        "ingredient_name": "Hibiscus Puree",
+        "amount_oz": 0.25,
+        "cost_per_oz_snapshot": 0.6932,
+        "abv_snapshot": null
+      },
+      {
+        "ingredient_name": "Simple Syrup",
+        "amount_oz": 0.25,
+        "cost_per_oz_snapshot": 0.051875,
+        "abv_snapshot": null
+      },
+      {
+        "ingredient_name": "Water",
+        "amount_oz": 1.0,
+        "cost_per_oz_snapshot": 0.0,
+        "abv_snapshot": null
+      }
+    ]
+  },
+  {
+    "name": "Vanilla XO Martini",
+    "category": "Martini",
+    "serve_size_oz": 6.5,
+    "menu_price": 13.25,
+    "ingredients": [
+      {
+        "ingredient_name": "Patron XO",
+        "amount_oz": 2.0,
+        "cost_per_oz_snapshot": 0.985804,
+        "abv_snapshot": 0.35
+      },
+      {
+        "ingredient_name": "Licor 43",
+        "amount_oz": 1.0,
+        "cost_per_oz_snapshot": 0.739426,
+        "abv_snapshot": 0.31
+      },
+      {
+        "ingredient_name": "Casamigos Rep Tequila",
+        "amount_oz": 0.5,
+        "cost_per_oz_snapshot": 1.493641,
+        "abv_snapshot": 0.4
+      },
+      {
+        "ingredient_name": "Oat Milk",
+        "amount_oz": 2.0,
+        "cost_per_oz_snapshot": 0.092839,
+        "abv_snapshot": null
+      },
+      {
+        "ingredient_name": "Water",
+        "amount_oz": 1.0,
+        "cost_per_oz_snapshot": 0.0,
+        "abv_snapshot": null
+      }
+    ]
+  },
+  {
+    "name": "Mango Matcha Martini w/Tito's",
+    "category": "Martini",
+    "serve_size_oz": 5.5,
+    "menu_price": 7.75,
+    "ingredients": [
+      {
+        "ingredient_name": "Tito's Vodka",
+        "amount_oz": 1.5,
+        "cost_per_oz_snapshot": 0.576457,
+        "abv_snapshot": 0.4
+      },
+      {
+        "ingredient_name": "Cointreau",
+        "amount_oz": 0.5,
+        "cost_per_oz_snapshot": 0.217096,
+        "abv_snapshot": 0.4
+      },
+      {
+        "ingredient_name": "Mango Macha Base",
+        "amount_oz": 2.5,
+        "cost_per_oz_snapshot": 0.126995,
+        "abv_snapshot": 0.041143
+      },
+      {
+        "ingredient_name": "Water",
+        "amount_oz": 1.0,
+        "cost_per_oz_snapshot": 0.0,
+        "abv_snapshot": null
+      }
+    ]
+  },
+  {
+    "name": "Mango Matcha Martini w/Hennessy",
+    "category": "Martini",
+    "serve_size_oz": 5.5,
+    "menu_price": 12.25,
+    "ingredients": [
+      {
+        "ingredient_name": "Hennessy",
+        "amount_oz": 1.5,
+        "cost_per_oz_snapshot": 1.183082,
+        "abv_snapshot": 0.4
+      },
+      {
+        "ingredient_name": "Cointreau",
+        "amount_oz": 0.5,
+        "cost_per_oz_snapshot": 0.217096,
+        "abv_snapshot": 0.4
+      },
+      {
+        "ingredient_name": "Mango Macha Base",
+        "amount_oz": 2.5,
+        "cost_per_oz_snapshot": 0.126995,
+        "abv_snapshot": 0.041143
+      },
+      {
+        "ingredient_name": "Water",
+        "amount_oz": 1.0,
+        "cost_per_oz_snapshot": 0.0,
+        "abv_snapshot": null
+      }
+    ]
+  }
+];
+
+async function importNewRecipes(){
+  const btn=document.getElementById('import-2026-btn');
+  btn.disabled=true; btn.textContent='⏳ Importing...';
+  try{
+    // Fetch existing recipe names
+    const {data:existing}=await sb.from('recipe_groups').select('name');
+    const existingNames=new Set((existing||[]).map(r=>r.name.toLowerCase().trim()));
+    
+    let added=0, skipped=0;
+    for(const rec of NEW_2026_RECIPES){
+      if(existingNames.has(rec.name.toLowerCase().trim())){
+        skipped++; continue;
+      }
+      // Insert recipe_group
+      const {data:grp,error:grpErr}=await sb.from('recipe_groups')
+        .insert({name:rec.name, category:rec.category})
+        .select('id').single();
+      if(grpErr) throw new Error(`Group insert failed for "${rec.name}": ${grpErr.message}`);
+      
+      // Insert recipe_version
+      const {data:ver,error:verErr}=await sb.from('recipe_versions')
+        .insert({group_id:grp.id, version_number:1, version_label:'v1', is_active:true, serve_size_oz:rec.serve_size_oz, menu_price:rec.menu_price})
+        .select('id').single();
+      if(verErr) throw new Error(`Version insert failed for "${rec.name}": ${verErr.message}`);
+      
+      // Insert ingredients
+      const ings=rec.ingredients.map((i,idx)=>({
+        version_id:ver.id,
+        ingredient_name:i.ingredient_name,
+        amount_oz:i.amount_oz,
+        cost_per_oz_snapshot:i.cost_per_oz_snapshot,
+        abv_snapshot:i.abv_snapshot,
+        sort_order:idx
+      }));
+      const {error:ingErr}=await sb.from('recipe_ingredients').insert(ings);
+      if(ingErr) throw new Error(`Ingredients insert failed for "${rec.name}": ${ingErr.message}`);
+      added++;
+    }
+    
+    btn.textContent=`✓ Done: ${added} added, ${skipped} already existed`;
+    btn.style.borderColor='#4CAF50'; btn.style.color='#4CAF50';
+    await loadRecipes();
+  } catch(e){
+    btn.disabled=false; btn.textContent='⬆ Import 2026 Recipes';
+    alert('Import error: '+e.message);
+  }
 }
 
 </script>
