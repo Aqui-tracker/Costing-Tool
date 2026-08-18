@@ -1266,7 +1266,7 @@ async function saveBuilderRecipe(){
 // RECIPE DATABASE
 // ──────────────────────────────────────────────────────────────────────────
 async function loadRecipes(){
-  const {data:groups}=await sb.from('recipe_groups').select('*').order('name');
+  const {data:groups}=await sb.from('recipe_groups').select('*').order('created_at',{ascending:false});
   const {data:versions}=await sb.from('recipe_versions').select('*').order('version_number');
   const {data:ings}=await sb.from('recipe_ingredients').select('*').order('sort_order');
   recipes=(groups||[]).map(g=>({
