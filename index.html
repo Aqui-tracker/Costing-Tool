@@ -232,6 +232,10 @@
       </div>
       <div>
         <label class="section-header block mb-1">Package Size (oz) *</label>
+        <div style="display:flex;gap:6px;margin-bottom:6px">
+          <button type="button" onclick="document.getElementById('ing-size').value=33.814" style="padding:4px 10px;border:1px solid #5BA4CF;border-radius:6px;background:#1E3A5F;color:#5BA4CF;cursor:pointer;font-size:12px;font-weight:600">1L</button>
+          <button type="button" onclick="document.getElementById('ing-size').value=25.36" style="padding:4px 10px;border:1px solid #5BA4CF;border-radius:6px;background:#1E3A5F;color:#5BA4CF;cursor:pointer;font-size:12px;font-weight:600">750mL</button>
+        </div>
         <input id="ing-size" class="input" type="number" step="0.001" placeholder="33.814"/>
       </div>
       <div>
@@ -1978,7 +1982,7 @@ async function importInventoryCSV(csvText, fileName, mode='replace'){
         items.forEach(incoming=>{
           const existIdx=current.findIndex(c=>c.item_name.toLowerCase()===incoming.item_name.toLowerCase());
           if(existIdx>=0){
-            current[existIdx]={...current[existIdx],...incoming,updated_at:now};
+            current[existIdx]={...current[existIdx],unit_cost:incoming.unit_cost,updated_at:now};
           } else {
             current.push({id:uuid4(),created_at:now,updated_at:now,...incoming});
           }
@@ -2006,7 +2010,8 @@ async function importInventoryCSV(csvText, fileName, mode='replace'){
         for(const item of items){
           const existId=existMap.get(item.item_name.toLowerCase());
           if(existId){
-            const {error:upErr}=await sb.from('inventory').update(item).eq('id',existId);
+            // Merge: only update price — preserve manually-set ABV, package size, category, etc.
+            const {error:upErr}=await sb.from('inventory').update({unit_cost:item.unit_cost}).eq('id',existId);
             if(upErr) throw new Error(`Update failed for "${item.item_name}": ${upErr.message}`);
           } else {
             const {error:insErr}=await sb.from('inventory').insert(item);
