@@ -1,4 +1,32 @@
-<!DOCTYPE html>
+<
+
+async function fixImportedYields(){
+  const btn=document.getElementById('fix-yields-btn');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Fixing...';}
+  try{
+    const {data:groups}=await sb.from('recipe_groups').select('id,name');
+    const nameToId=Object.fromEntries((groups||[]).map(g=>[g.name.toLowerCase().trim(),g.id]));
+    let fixed=0;
+    for(const rec of NEW_2026_RECIPES){
+      if(!rec.yield_oz) continue;
+      const gid=nameToId[rec.name.toLowerCase().trim()];
+      if(!gid) continue;
+      const {data:vers}=await sb.from('recipe_versions').select('id,yield_oz').eq('group_id',gid);
+      for(const v of (vers||[])){
+        if(v.yield_oz!==rec.yield_oz){
+          await sb.from('recipe_versions').update({yield_oz:rec.yield_oz}).eq('id',v.id);
+          fixed++;
+        }
+      }
+    }
+    if(btn){btn.textContent=`✓ Fixed ${fixed} version(s)`;btn.style.borderColor='#4CAF50';btn.style.color='#4CAF50';}
+    await loadRecipes();
+  } catch(e){
+    if(btn){btn.disabled=false;btn.textContent='🔧 Fix Yields';}
+    alert('Fix error: '+e.message);
+  }
+}
+!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -527,6 +555,7 @@
         </div>
         <button onclick="openNewRecipeModal()" class="btn-gold">+ New Recipe</button>
         <button onclick="importNewRecipes()" class="btn-gold" style="background:#1E3A5F;border-color:#5BA4CF;color:#5BA4CF" id="import-2026-btn">⬆ Import 2026 Recipes</button>
+        <button onclick="fixImportedYields()" class="btn-gold" style="background:#1E3A5F;border-color:#E57373;color:#E57373" id="fix-yields-btn">🔧 Fix Yields</button>
       </div>
       <div class="card p-4 mb-4 flex gap-3 items-center flex-wrap">
         <div style="flex:1;min-width:200px"><input id="db-search" class="input" placeholder="🔍  Search recipes..." oninput="filterRecipes()"/></div>
@@ -2085,7 +2114,8 @@ const NEW_2026_RECIPES = [
         "cost_per_oz_snapshot": 0.0,
         "abv_snapshot": null
       }
-    ]
+    ],
+    "yield_oz": 88.0
   },
   {
     "name": "Hennessy Blackberry Swirl Base",
@@ -2141,7 +2171,8 @@ const NEW_2026_RECIPES = [
         "cost_per_oz_snapshot": 0.039633,
         "abv_snapshot": null
       }
-    ]
+    ],
+    "yield_oz": 47.5
   },
   {
     "name": "HM Mango Matcha w/Tito's Craft",
@@ -2173,7 +2204,8 @@ const NEW_2026_RECIPES = [
         "cost_per_oz_snapshot": 0.0,
         "abv_snapshot": null
       }
-    ]
+    ],
+    "yield_oz": 5.5
   },
   {
     "name": "HM Mango Matcha  w/Hennessy Craft",
@@ -2205,7 +2237,8 @@ const NEW_2026_RECIPES = [
         "cost_per_oz_snapshot": 0.0,
         "abv_snapshot": null
       }
-    ]
+    ],
+    "yield_oz": 5.5
   },
   {
     "name": "HM Gran Centenario Blackberry Craft",
@@ -2255,7 +2288,8 @@ const NEW_2026_RECIPES = [
         "cost_per_oz_snapshot": 0.0,
         "abv_snapshot": null
       }
-    ]
+    ],
+    "yield_oz": 6.25
   },
   {
     "name": "Vanilla XO Martini",
@@ -2293,7 +2327,8 @@ const NEW_2026_RECIPES = [
         "cost_per_oz_snapshot": 0.0,
         "abv_snapshot": null
       }
-    ]
+    ],
+    "yield_oz": 6.5
   },
   {
     "name": "Mango Matcha Martini w/Tito's",
@@ -2325,7 +2360,8 @@ const NEW_2026_RECIPES = [
         "cost_per_oz_snapshot": 0.0,
         "abv_snapshot": null
       }
-    ]
+    ],
+    "yield_oz": 5.5
   },
   {
     "name": "Mango Matcha Martini w/Hennessy",
@@ -2357,7 +2393,8 @@ const NEW_2026_RECIPES = [
         "cost_per_oz_snapshot": 0.0,
         "abv_snapshot": null
       }
-    ]
+    ],
+    "yield_oz": 5.5
   }
 ];
 
@@ -2382,7 +2419,7 @@ async function importNewRecipes(){
       
       // Insert recipe_version
       const {data:ver,error:verErr}=await sb.from('recipe_versions')
-        .insert({group_id:grp.id, version_number:1, version_label:'v1', is_active:true, serve_size_oz:rec.serve_size_oz, menu_price:rec.menu_price})
+        .insert({group_id:grp.id, version_number:1, version_label:'v1', is_active:true, serve_size_oz:rec.serve_size_oz, yield_oz:rec.yield_oz||null, menu_price:rec.menu_price})
         .select('id').single();
       if(verErr) throw new Error(`Version insert failed for "${rec.name}": ${verErr.message}`);
       
