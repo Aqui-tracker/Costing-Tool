@@ -526,7 +526,7 @@
         </div>
         <button onclick="openNewRecipeModal()" class="btn-gold">+ New Recipe</button>
         <button onclick="importNewRecipes()" class="btn-gold" style="background:#1E3A5F;border-color:#5BA4CF;color:#5BA4CF" id="import-2026-btn">⬆ Import 2026 Recipes</button>
-        <button onclick="fixImportedYields()" class="btn-gold" style="background:#1E3A5F;border-color:#E57373;color:#E57373" id="fix-yields-btn">🔧 Fix Yields</button>
+        <button onclick="resetAndReimport2026()" class="btn-gold" style="background:#1E3A5F;border-color:#E57373;color:#E57373" id="fix-yields-btn">🔄 Reset & Reimport 2026</button>
       </div>
       <div class="card p-4 mb-4 flex gap-3 items-center flex-wrap">
         <div style="flex:1;min-width:200px"><input id="db-search" class="input" placeholder="🔍  Search recipes..." oninput="filterRecipes()"/></div>
@@ -1660,15 +1660,25 @@ async function deleteVersionFromModal(){
   if(!confirm(`Delete version "${ver.version_label||'V'+ver.version_number}"?`)) return;
   if(modalRecipeGroup.versions.length===1){
     if(!confirm('This is the only version. Delete the entire recipe?')) return;
-    await sb.from('recipe_groups').delete().eq('id',modalRecipeGroup.id);
+    // Delete in correct order: ingredients → versions → group
+    for(const v of modalRecipeGroup.versions){
+      await sb.from('recipe_ingredients').delete().eq('version_id',v.id);
+      await sb.from('recipe_versions').delete().eq('id',v.id);
+    }
+    const {error:delErr}=await sb.from('recipe_groups').delete().eq('id',modalRecipeGroup.id);
+    if(delErr){alert('Delete failed: '+delErr.message);return;}
+    modalRecipeGroup=null;
     closeRecipeModal();
   } else {
+    await sb.from('recipe_ingredients').delete().eq('version_id',ver.id);
     await sb.from('recipe_versions').delete().eq('id',ver.id);
   }
   await loadRecipes();
-  const saved=recipes.find(r=>r.id===modalRecipeGroup?.id);
-  if(saved){modalRecipeGroup=saved;modalVersionIdx=Math.min(modalVersionIdx,saved.versions.length-1);renderModalVersions();renderModalIngredients();}
-  else closeRecipeModal();
+  if(modalRecipeGroup){
+    const saved=recipes.find(r=>r.id===modalRecipeGroup.id);
+    if(saved){modalRecipeGroup=saved;modalVersionIdx=Math.min(modalVersionIdx,saved.versions.length-1);renderModalVersions();renderModalIngredients();}
+    else closeRecipeModal();
+  }
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -2418,30 +2428,55 @@ async function importNewRecipes(){
 }
 
 
-async function fixImportedYields(){
+async function resetAndReimport2026(){
   const btn=document.getElementById('fix-yields-btn');
-  if(btn){btn.disabled=true;btn.textContent='⏳ Fixing...';}
+  if(!confirm('This will delete and re-import the 8 new 2026 recipes. Continue?')) return;
+  btn.disabled=true; btn.textContent='⏳ Working...';
   try{
     const {data:groups}=await sb.from('recipe_groups').select('id,name');
-    const nameToId=Object.fromEntries((groups||[]).map(g=>[g.name.toLowerCase().trim(),g.id]));
-    let fixed=0;
-    for(const rec of NEW_2026_RECIPES){
-      if(!rec.yield_oz) continue;
-      const gid=nameToId[rec.name.toLowerCase().trim()];
-      if(!gid) continue;
-      const {data:vers}=await sb.from('recipe_versions').select('id,yield_oz').eq('group_id',gid);
+    const names2026=NEW_2026_RECIPES.map(r=>r.name.toLowerCase().trim());
+    const toDelete=(groups||[]).filter(g=>names2026.includes(g.name.toLowerCase().trim()));
+
+    // Delete existing
+    for(const g of toDelete){
+      const {data:vers}=await sb.from('recipe_versions').select('id').eq('group_id',g.id);
       for(const v of (vers||[])){
-        if(v.yield_oz!==rec.yield_oz){
-          await sb.from('recipe_versions').update({yield_oz:rec.yield_oz}).eq('id',v.id);
-          fixed++;
-        }
+        await sb.from('recipe_ingredients').delete().eq('version_id',v.id);
+        await sb.from('recipe_versions').delete().eq('id',v.id);
       }
+      await sb.from('recipe_groups').delete().eq('id',g.id);
     }
-    if(btn){btn.textContent=`✓ Fixed ${fixed} version(s)`;btn.style.borderColor='#4CAF50';btn.style.color='#4CAF50';}
+
+    // Reimport fresh
+    let added=0;
+    for(const rec of NEW_2026_RECIPES){
+      const {data:grp,error:grpErr}=await sb.from('recipe_groups')
+        .insert({name:rec.name,category:rec.category})
+        .select('id').single();
+      if(grpErr) throw new Error('Group: '+grpErr.message);
+
+      const {data:ver,error:verErr}=await sb.from('recipe_versions')
+        .insert({group_id:grp.id,version_number:1,version_label:'v1',is_active:true,
+                 serve_size_oz:rec.serve_size_oz,yield_oz:rec.yield_oz||null,menu_price:rec.menu_price})
+        .select('id').single();
+      if(verErr) throw new Error('Version: '+verErr.message);
+
+      const ings=rec.ingredients.map((i,idx)=>({
+        version_id:ver.id,ingredient_name:i.ingredient_name,
+        amount_oz:i.amount_oz,cost_per_oz_snapshot:i.cost_per_oz_snapshot,
+        abv_snapshot:i.abv_snapshot,sort_order:idx
+      }));
+      const {error:ingErr}=await sb.from('recipe_ingredients').insert(ings);
+      if(ingErr) throw new Error('Ingredients: '+ingErr.message);
+      added++;
+    }
+
+    btn.textContent=`✓ Reimported ${added} recipes`;
+    btn.style.borderColor='#4CAF50'; btn.style.color='#4CAF50';
     await loadRecipes();
   } catch(e){
-    if(btn){btn.disabled=false;btn.textContent='🔧 Fix Yields';}
-    alert('Fix error: '+e.message);
+    btn.disabled=false; btn.textContent='🔄 Reset & Reimport 2026';
+    alert('Error: '+e.message);
   }
 }
 
