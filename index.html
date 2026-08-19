@@ -1,32 +1,3 @@
-<
-
-async function fixImportedYields(){
-  const btn=document.getElementById('fix-yields-btn');
-  if(btn){btn.disabled=true;btn.textContent='⏳ Fixing...';}
-  try{
-    const {data:groups}=await sb.from('recipe_groups').select('id,name');
-    const nameToId=Object.fromEntries((groups||[]).map(g=>[g.name.toLowerCase().trim(),g.id]));
-    let fixed=0;
-    for(const rec of NEW_2026_RECIPES){
-      if(!rec.yield_oz) continue;
-      const gid=nameToId[rec.name.toLowerCase().trim()];
-      if(!gid) continue;
-      const {data:vers}=await sb.from('recipe_versions').select('id,yield_oz').eq('group_id',gid);
-      for(const v of (vers||[])){
-        if(v.yield_oz!==rec.yield_oz){
-          await sb.from('recipe_versions').update({yield_oz:rec.yield_oz}).eq('id',v.id);
-          fixed++;
-        }
-      }
-    }
-    if(btn){btn.textContent=`✓ Fixed ${fixed} version(s)`;btn.style.borderColor='#4CAF50';btn.style.color='#4CAF50';}
-    await loadRecipes();
-  } catch(e){
-    if(btn){btn.disabled=false;btn.textContent='🔧 Fix Yields';}
-    alert('Fix error: '+e.message);
-  }
-}
-!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -2443,6 +2414,34 @@ async function importNewRecipes(){
   } catch(e){
     btn.disabled=false; btn.textContent='⬆ Import 2026 Recipes';
     alert('Import error: '+e.message);
+  }
+}
+
+
+async function fixImportedYields(){
+  const btn=document.getElementById('fix-yields-btn');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Fixing...';}
+  try{
+    const {data:groups}=await sb.from('recipe_groups').select('id,name');
+    const nameToId=Object.fromEntries((groups||[]).map(g=>[g.name.toLowerCase().trim(),g.id]));
+    let fixed=0;
+    for(const rec of NEW_2026_RECIPES){
+      if(!rec.yield_oz) continue;
+      const gid=nameToId[rec.name.toLowerCase().trim()];
+      if(!gid) continue;
+      const {data:vers}=await sb.from('recipe_versions').select('id,yield_oz').eq('group_id',gid);
+      for(const v of (vers||[])){
+        if(v.yield_oz!==rec.yield_oz){
+          await sb.from('recipe_versions').update({yield_oz:rec.yield_oz}).eq('id',v.id);
+          fixed++;
+        }
+      }
+    }
+    if(btn){btn.textContent=`✓ Fixed ${fixed} version(s)`;btn.style.borderColor='#4CAF50';btn.style.color='#4CAF50';}
+    await loadRecipes();
+  } catch(e){
+    if(btn){btn.disabled=false;btn.textContent='🔧 Fix Yields';}
+    alert('Fix error: '+e.message);
   }
 }
 
