@@ -321,7 +321,7 @@
       <div><label class="section-header block mb-1">Recipe Name *</label><input id="nr-name" class="input" placeholder="e.g. Paradise Swirl Base"/></div>
       <div>
         <label class="section-header block mb-1">Category</label>
-        <select id="nr-cat" class="input"><option value="Swirl">Swirl</option><option value="Rocks">Rocks</option><option value="Craft">Craft</option><option value="Signature">Signature</option><option value="Sangria">Sangria</option><option value="Mocktail">Mocktail</option><option value="Martini">Martini</option><option value="Other">Other</option></select>
+        <select id="nr-cat" class="input"><option value="Swirl">Swirl</option><option value="Rocks">Rocks</option><option value="Craft">Craft</option><option value="Signature">Signature</option><option value="Sangria">Sangria</option><option value="Mocktail">Mocktail</option><option value="Hand Made Cocktails">Hand Made Cocktails</option><option value="Martini">Martini</option><option value="Other">Other</option></select>
       </div>
       <div><label class="section-header block mb-1">First Version Label</label><input id="nr-vlabel" class="input" value="V1" placeholder="V1"/></div>
     </div>
@@ -458,7 +458,7 @@
               </div>
               <div>
                 <label class="section-header block mb-1" style="font-size:10px">Category</label>
-                <select id="b-cat" class="input"><option value="Swirl">Swirl</option><option value="Rocks">Rocks</option><option value="Craft">Craft</option><option value="Signature">Signature</option><option value="Sangria">Sangria</option><option value="Mocktail">Mocktail</option><option value="Other">Other</option></select>
+                <select id="b-cat" class="input" onchange="onBuilderCatChange()"><option value="Swirl">Swirl</option><option value="Craft">Craft</option><option value="Hand Made Cocktails">Hand Made Cocktails</option><option value="Rocks">Rocks</option><option value="Signature">Signature</option><option value="Sangria">Sangria</option><option value="Mocktail">Mocktail</option><option value="Other">Other</option></select>
               </div>
               <div>
                 <label class="section-header block mb-1" style="font-size:10px">Version Label</label>
@@ -488,10 +488,10 @@
               <div class="metric-box"><div class="metric-val" id="s-total-cost">$0.00</div><div class="metric-lbl">Total Recipe Cost</div></div>
               <div class="metric-box"><div class="metric-val" id="s-cpoz">$0.0000</div><div class="metric-lbl">Cost per oz</div></div>
               <div class="metric-box abv-metric-toggle" id="s-abv-box" onclick="toggleBuilderABV()" title="Click to see ABV breakdown"><div class="metric-val" id="s-abv">0.0%</div><div class="metric-lbl">Recipe ABV <span style="font-size:9px;color:#5BA4CF" id="s-abv-arrow">▶ details</span></div></div>
-              <div class="metric-box"><div class="metric-val" id="s-abv-sw" style="color:#B39DDB">0.0%</div><div class="metric-lbl">Swirl ABV <span style="font-size:9px;color:#9BB0C8">(4 oz recipe + 12 oz marg)</span></div></div>
+              <div class="metric-box" id="s-swirl-abv-row"><div class="metric-val" id="s-abv-sw" style="color:#B39DDB">0.0%</div><div class="metric-lbl">Swirl ABV <span style="font-size:9px;color:#9BB0C8">(4 oz recipe + 12 oz marg)</span></div></div>
               <div id="abv-builder-breakdown" class="hidden"></div>
-              <div class="metric-box"><div class="metric-val" id="s-drink-cost">$0.00</div><div class="metric-lbl">Swirl Drink Cost (incl. marg mix)</div></div>
-              <div class="metric-box"><div class="metric-val" id="s-cog">—</div><div class="metric-lbl">Swirl COG %</div></div>
+              <div class="metric-box" id="s-swirl-cost-row"><div class="metric-val" id="s-drink-cost">$0.00</div><div class="metric-lbl" id="s-drink-cost-lbl">Swirl Drink Cost (incl. marg mix)</div></div>
+              <div class="metric-box"><div class="metric-val" id="s-cog">—</div><div class="metric-lbl" id="s-cog-lbl">Swirl COG %</div></div>
               <hr style="border-color:#2C3E50;margin:8px 0"/>
               <div style="font-size:11px;color:#9BB0C8;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Suggested Prices</div>
               <div class="flex gap-2">
@@ -529,7 +529,7 @@
       <div class="card p-4 mb-4 flex gap-3 items-center flex-wrap">
         <div style="flex:1;min-width:200px"><input id="db-search" class="input" placeholder="🔍  Search recipes..." oninput="filterRecipes()"/></div>
         <select id="db-cat-filter" class="input" style="width:160px" onchange="filterRecipes()">
-          <option value="">All Categories</option><option value="Swirl">Swirl</option><option value="Rocks">Rocks</option><option value="Craft">Craft</option><option value="Signature">Signature</option><option value="Sangria">Sangria</option><option value="Mocktail">Mocktail</option><option value="Other">Other</option>
+          <option value="">All Categories</option><option value="Swirl">Swirl</option><option value="Craft">Craft</option><option value="Hand Made Cocktails">Hand Made Cocktails</option><option value="Rocks">Rocks</option><option value="Signature">Signature</option><option value="Sangria">Sangria</option><option value="Mocktail">Mocktail</option><option value="Martini">Martini</option><option value="Other">Other</option>
         </select>
         <span id="db-count" style="color:#9BB0C8;font-size:13px;white-space:nowrap"></span>
       </div>
@@ -1155,6 +1155,8 @@ function selectBuilderIng(id,name){
   recalcBuilder();
 }
 
+function onBuilderCatChange(){ recalcBuilder(); }
+
 function recalcBuilder(){
   let totalCost=0,totalAlc=0,totalOz=0;
   builderRows.forEach(row=>{
@@ -1177,18 +1179,26 @@ function recalcBuilder(){
   const swirlCpoz=calcSwirlCpoz(cpoz);
   const drinkCost=cpoz*serveOz;
   const swirlDrinkCost=swirlCpoz*serveOz;
-  const cogPct=menuPrice?swirlDrinkCost/menuPrice:null;
+  const cat=(document.getElementById('b-cat').value||'').toLowerCase();
+  const isSwirl=(cat==='swirl'||cat==='craft'||cat==='signature'||cat==='sangria');
+  const displayCost=isSwirl?swirlDrinkCost:drinkCost;
+  const cogPct=menuPrice?displayCost/menuPrice:null;
+  // Show/hide swirl-specific rows
+  const swirlOnly=['s-swirl-abv-row','s-swirl-cost-row'];
+  swirlOnly.forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=isSwirl?'':'none';});
+  document.getElementById('s-drink-cost-lbl').textContent=isSwirl?'Swirl Drink Cost (incl. marg mix)':'Drink Cost';
+  document.getElementById('s-cog-lbl').textContent=isSwirl?'Swirl COG %':'COG %';
   document.getElementById('s-total-cost').textContent='$'+fmtNum(totalCost,2);
   document.getElementById('s-cpoz').textContent='$'+fmtNum(cpoz,4);
   document.getElementById('s-abv').textContent=fmtNum(abv*100,2)+'%';
   document.getElementById('s-abv-sw').textContent=fmtNum(abvSw*100,2)+'%';
-  document.getElementById('s-drink-cost').textContent='$'+fmtNum(swirlDrinkCost,2);
+  document.getElementById('s-drink-cost').textContent='$'+fmtNum(displayCost,2);
   const cogEl=document.getElementById('s-cog');
   if(cogPct!==null){cogEl.textContent=fmtNum(cogPct*100,1)+'%';cogEl.className='metric-val '+(cogPct<=.20?'cog-good':cogPct<=.25?'cog-ok':'cog-bad');}
   else{cogEl.textContent='—';cogEl.className='metric-val';}
-  document.getElementById('s-p20').textContent=swirlDrinkCost?'$'+fmtNum(swirlDrinkCost/0.20,2):'—';
-  document.getElementById('s-p25').textContent=swirlDrinkCost?'$'+fmtNum(swirlDrinkCost/0.25,2):'—';
-  document.getElementById('s-p30').textContent=swirlDrinkCost?'$'+fmtNum(swirlDrinkCost/0.30,2):'—';
+  document.getElementById('s-p20').textContent=displayCost?'$'+fmtNum(displayCost/0.20,2):'—';
+  document.getElementById('s-p25').textContent=displayCost?'$'+fmtNum(displayCost/0.25,2):'—';
+  document.getElementById('s-p30').textContent=displayCost?'$'+fmtNum(displayCost/0.30,2):'—';
   renderBuilderABVBreakdown();
 }
 
@@ -1356,7 +1366,7 @@ function renderRecipes(list){
   const grid=document.getElementById('recipes-grid');
   document.getElementById('db-count').textContent=`${list.length} recipe${list.length!==1?'s':''}`;
   if(!list.length){grid.innerHTML=`<div class="text-center" style="padding:60px;color:#9BB0C8;grid-column:1/-1">No recipes found.</div>`;return;}
-  const catColors={Swirl:'badge-blue',Rocks:'badge-gold',Craft:'badge-green',Sangria:'badge-red',Signature:'badge-blue',Mocktail:'badge-green',Other:'badge-blue'};
+  const catColors={Swirl:'badge-blue',Rocks:'badge-gold',Craft:'badge-green',Sangria:'badge-red',Signature:'badge-blue',Mocktail:'badge-green','Hand Made Cocktails':'badge-purple',Martini:'badge-purple',Other:'badge-blue'};
   grid.innerHTML=list.map(group=>{
     const active=getActiveVersion(group);
     const m=calcVersionMetrics(active);
@@ -1376,22 +1386,22 @@ function renderRecipes(list){
           ${active.menu_price?`<span style="color:#4CAF50;font-weight:600">$${fmtNum(active.menu_price,2)}</span>`:''}
         </div>
         <div class="grid grid-cols-3 gap-2">
+          ${(()=>{const isSw=['swirl','craft','signature','sangria'].includes((group.category||'').toLowerCase());const dispCpoz=isSw?m.swirlCpoz:m.cpoz;const dispAbv=isSw?m.swirlAbv:m.abv;const dispCog=isSw?m.swirlCog:m.cog;return `
           <div class="metric-box" style="padding:8px">
-            <div style="font-size:13px;font-weight:700;color:#4CAF50">$${fmtNum(m.swirlCpoz,4)}</div>
-            <div style="font-size:9px;color:#9BB0C8;margin-top:1px;text-transform:uppercase;letter-spacing:.5px">Swirl $/oz</div>
-            <div style="font-size:10px;color:#D4AC0D;margin-top:4px">$${fmtNum(m.cpoz,4)}</div>
-            <div style="font-size:8px;color:#9BB0C8;text-transform:uppercase;letter-spacing:.5px">Recipe $/oz</div>
+            <div style="font-size:13px;font-weight:700;color:#4CAF50">$${ fmtNum(dispCpoz||0,4)}</div>
+            <div style="font-size:9px;color:#9BB0C8;margin-top:1px;text-transform:uppercase;letter-spacing:.5px">${isSw?'Swirl $/oz':'Drink $/oz'}</div>
+            ${isSw?`<div style="font-size:10px;color:#D4AC0D;margin-top:4px">$${ fmtNum(m.cpoz||0,4)}</div><div style="font-size:8px;color:#9BB0C8;text-transform:uppercase;letter-spacing:.5px">Recipe $/oz</div>`:''}
           </div>
           <div class="metric-box" style="padding:8px;text-align:center">
-            ${abvBadge(m.swirlAbv||0, group.category)}
-            <div style="font-size:8px;color:#9BB0C8;text-transform:uppercase;letter-spacing:.5px;margin-top:3px">Swirl ABV</div>
-            <div style="font-size:10px;color:#5BA4CF;margin-top:4px;font-weight:600">${fmtNum((m.abv||0)*100,1)}%</div>
-            <div style="font-size:8px;color:#9BB0C8;text-transform:uppercase;letter-spacing:.5px">Recipe ABV</div>
+            ${abvBadge(dispAbv||0,group.category)}
+            <div style="font-size:8px;color:#9BB0C8;text-transform:uppercase;letter-spacing:.5px;margin-top:3px">${isSw?'Swirl ABV':'ABV'}</div>
+            ${isSw?`<div style="font-size:10px;color:#5BA4CF;margin-top:4px;font-weight:600">${fmtNum((m.abv||0)*100,1)}%</div><div style="font-size:8px;color:#9BB0C8;text-transform:uppercase;letter-spacing:.5px">Recipe ABV</div>`:''}
           </div>
           <div class="metric-box" style="padding:8px">
-            ${m.swirlCog!==null?`${cogBadge(m.swirlCog)}<div style="font-size:8px;color:#9BB0C8;text-transform:uppercase;letter-spacing:.5px;margin-top:3px;text-align:center">Swirl COG</div>`:'<span style="color:#9BB0C8;font-size:11px">No price</span>'}
+            ${dispCog!==null?`${cogBadge(dispCog)}<div style="font-size:8px;color:#9BB0C8;text-transform:uppercase;letter-spacing:.5px;margin-top:3px;text-align:center">${isSw?'Swirl COG':'COG'}</div>`:`<span style="color:#9BB0C8;font-size:11px">No price</span>`}
           </div>
         </div>
+        `})()}
         <div style="font-size:11px;color:#9BB0C8;margin-top:10px">${active.ingredients.length} ingredients · yield ${active.yield_oz||'?'} oz · serve ${active.serve_size_oz||12} oz</div>`
       :'<div style="color:#9BB0C8;font-size:13px;padding:12px 0">No versions yet. Click to add one.</div>'}
     </div>`;
@@ -1533,20 +1543,27 @@ function addIngRowModal(){
 
 function renderModalMetrics(ver){
   const m=calcVersionMetrics(ver);
+  const isSwirlCat=['swirl','craft','signature','sangria'].includes((modalRecipeGroup?.category||'').toLowerCase());
+  const displayCost=isSwirlCat?(m.swirlDrinkCost||0):(m.drinkCost||0);
+  const displayCpoz=isSwirlCat?(m.swirlCpoz||0):(m.cpoz||0);
+  const displayCog=isSwirlCat?m.swirlCog:m.cog;
+  const costLbl=isSwirlCat?'Swirl Drink Cost':'Drink Cost';
+  const cpozLbl=isSwirlCat?'Swirl Cost/oz':'Drink Cost/oz';
+  const cogLbl=isSwirlCat?'Swirl COG':'COG';
   document.getElementById('rm-metrics').innerHTML=`
     <div class="metric-box">
       <div class="metric-val" style="font-size:15px">$${fmtNum(m.totalCost||0,2)}</div><div class="metric-lbl">Recipe Cost</div>
       <div style="margin-top:6px;padding-top:6px;border-top:1px solid #2C3E50">
-        <div style="font-size:13px;font-weight:700;color:#4CAF50">$${fmtNum(m.swirlDrinkCost||0,2)}</div>
-        <div style="font-size:9px;color:#9BB0C8;text-transform:uppercase;letter-spacing:.5px">Swirl Drink Cost</div>
+        <div style="font-size:13px;font-weight:700;color:#4CAF50">$${fmtNum(displayCost,2)}</div>
+        <div style="font-size:9px;color:#9BB0C8;text-transform:uppercase;letter-spacing:.5px">${costLbl}</div>
       </div>
     </div>
     <div class="metric-box">
       <div class="metric-val" style="font-size:15px">$${fmtNum(m.cpoz||0,4)}</div><div class="metric-lbl">Recipe Cost/oz</div>
-      <div style="margin-top:6px;padding-top:6px;border-top:1px solid #2C3E50">
-        <div style="font-size:13px;font-weight:700;color:#4CAF50">$${fmtNum(m.swirlCpoz||0,4)}</div>
-        <div style="font-size:9px;color:#9BB0C8;text-transform:uppercase;letter-spacing:.5px">Swirl Cost/oz</div>
-      </div>
+      ${isSwirlCat?`<div style="margin-top:6px;padding-top:6px;border-top:1px solid #2C3E50">
+        <div style="font-size:13px;font-weight:700;color:#4CAF50">$${fmtNum(displayCpoz,4)}</div>
+        <div style="font-size:9px;color:#9BB0C8;text-transform:uppercase;letter-spacing:.5px">${cpozLbl}</div>
+      </div>`:''}
     </div>
     <div class="metric-box abv-metric-toggle" onclick="toggleModalABV()" title="Click to see ABV breakdown" style="cursor:pointer">
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px">
@@ -1561,12 +1578,9 @@ function renderModalMetrics(ver){
       </div>
     </div>
     <div class="metric-box">
-      ${m.swirlCog!==null?`
-        <div class="metric-val ${m.swirlCog<=.20?'cog-good':m.swirlCog<=.25?'cog-ok':'cog-bad'}" style="font-size:16px">${fmtNum(m.swirlCog*100,1)}%</div>
-        <div class="metric-lbl">Swirl COG</div>
-        <div style="margin-top:6px;padding-top:6px;border-top:1px solid #2C3E50;font-size:10px;color:#9BB0C8">
-          Recipe only COG: ${m.cog!==null?fmtNum(m.cog*100,1)+'%':'—'}
-        </div>`
+      ${displayCog!==null?`
+        <div class="metric-val ${displayCog<=.18?'cog-good':displayCog<=.20?'cog-ok':'cog-bad'}" style="font-size:16px">${fmtNum(displayCog*100,1)}%</div>
+        <div class="metric-lbl">${cogLbl}</div>`
       :'<div class="metric-lbl" style="margin-top:8px">No menu price</div>'}
     </div>`;
 }
