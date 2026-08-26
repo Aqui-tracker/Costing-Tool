@@ -1443,8 +1443,16 @@ function renderModalVersions(){
     const isSwirl=(modalRecipeGroup.category||'').toLowerCase()==='swirl';
     document.getElementById('rm-serve').value=ver.serve_size_oz||(isSwirl?16:12);
     const ryf=document.getElementById('rm-yield');
-    ryf.value=ver.yield_oz||'';
-    if(ver.yield_oz) ryf.dataset.manual='1'; else delete ryf.dataset.manual;
+    if(ver.yield_oz){
+      ryf.value=ver.yield_oz;
+      ryf.dataset.manual='1';
+    } else {
+      // Auto-calculate yield from ingredients if not set
+      const autoYield=(ver.ingredients||[]).reduce((s,i)=>s+(parseFloat(i.amount_oz)||0),0);
+      if(autoYield>0){ ver.yield_oz=autoYield; ryf.value=autoYield.toFixed(2); }
+      else ryf.value='';
+      delete ryf.dataset.manual;
+    }
     document.getElementById('rm-price').value=ver.menu_price||'';
   }
 }
