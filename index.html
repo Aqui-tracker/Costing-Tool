@@ -1324,7 +1324,9 @@ function calcVersionMetrics(ver){
     const abv=liveItem&&liveItem.abv!=null?liveItem.abv:(parseFloat(i.abv_snapshot)||0);
     totalCost+=cpoz*amt; totalAlc+=abv*amt;
   });
-  const yieldOz=parseFloat(ver.yield_oz)||0;
+  // Prefer ver.yield_oz; fall back to live field; fall back to summing ingredients
+  const yieldField=document.getElementById('rm-yield');
+  const yieldOz=parseFloat(ver.yield_oz)||parseFloat(yieldField&&yieldField.value)||((ver.ingredients||[]).reduce((s,i)=>s+(parseFloat(i.amount_oz)||0),0));
   const serveOz=parseFloat(ver.serve_size_oz)||12;
   const menuPrice=parseFloat(ver.menu_price)||0;
   const cpoz=yieldOz?totalCost/yieldOz:0;
