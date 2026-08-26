@@ -1324,9 +1324,9 @@ function calcVersionMetrics(ver){
     const abv=liveItem&&liveItem.abv!=null?liveItem.abv:(parseFloat(i.abv_snapshot)||0);
     totalCost+=cpoz*amt; totalAlc+=abv*amt;
   });
-  // Prefer ver.yield_oz; fall back to live field; fall back to summing ingredients
-  const yieldField=document.getElementById('rm-yield');
-  const yieldOz=parseFloat(ver.yield_oz)||parseFloat(yieldField&&yieldField.value)||((ver.ingredients||[]).reduce((s,i)=>s+(parseFloat(i.amount_oz)||0),0));
+  // Always use ver.yield_oz (kept in sync by updateModalIng); fallback to ingredient sum
+  const _ingSum=(ver.ingredients||[]).reduce((s,i)=>s+(parseFloat(i.amount_oz)||0),0);
+  const yieldOz=parseFloat(ver.yield_oz)||_ingSum||0;
   const serveOz=parseFloat(ver.serve_size_oz)||12;
   const menuPrice=parseFloat(ver.menu_price)||0;
   const cpoz=yieldOz?totalCost/yieldOz:0;
@@ -1516,13 +1516,11 @@ function updateModalIng(idx,field,val){
   const ver=modalRecipeGroup.versions[modalVersionIdx];
   if(!ver||!ver.ingredients[idx]) return;
   ver.ingredients[idx][field]=field==='amount_oz'?parseFloat(val)||0:val;
-  // Auto-recalculate yield from ingredient amounts (unless manually set)
+  // Always recompute yield from ingredients so metrics stay live
+  const total_ing=(ver.ingredients||[]).reduce((s,i)=>s+(parseFloat(i.amount_oz)||0),0);
+  ver.yield_oz=total_ing||null;
   const yf=document.getElementById('rm-yield');
-  if(yf&&!yf.dataset.manual){
-    const total=ver.ingredients.reduce((s,i)=>s+(parseFloat(i.amount_oz)||0),0);
-    yf.value=total>0?total.toFixed(2):'';
-    ver.yield_oz=total>0?total:null;
-  }
+  if(yf&&!yf.dataset.manual){ yf.value=total_ing>0?total_ing.toFixed(2):''; }
   renderModalMetrics(ver);
 }
 function removeModalIngRow(idx){
@@ -1572,6 +1570,8 @@ function renderModalMetrics(ver){
   const costLbl=isSwirlCat?'Swirl Drink Cost':'Drink Cost';
   const cpozLbl=isSwirlCat?'Swirl Cost/oz':'Drink Cost/oz';
   const cogLbl=isSwirlCat?'Swirl COG':'COG';
+  // DEBUG: log what's being computed
+  console.log('renderModalMetrics cat=',modalRecipeGroup?.category,'isSwirlCat=',isSwirlCat,'yieldOz=',parseFloat(ver.yield_oz),'totalCost=',m.totalCost,'cpoz=',m.cpoz,'swirlCog=',m.swirlCog,'standaloneCog=',m.standaloneCog);
   document.getElementById('rm-metrics').innerHTML=`
     <div class="metric-box">
       <div class="metric-val" style="font-size:15px">$${fmtNum(m.totalCost||0,2)}</div><div class="metric-lbl">Recipe Cost</div>
