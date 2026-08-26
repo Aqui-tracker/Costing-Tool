@@ -943,8 +943,9 @@ async function syncAbvFromLookup(){
 }
 
 function costPerOz(item){
-  if(!item.package_size_oz||!item.unit_cost) return null;
-  return item.unit_cost/item.package_size_oz;
+  if(!item.package_size_oz) return null;
+  if(item.unit_cost==null) return null;
+  return item.unit_cost/item.package_size_oz;  // returns 0 for free items like water
 }
 
 function invItemRow(item){
@@ -1089,7 +1090,7 @@ function renderBuilderRows(){
     const item=findInventoryItem(row.name);
     const cpoz=item?costPerOz(item):null;
     const amt=parseFloat(row.amount)||0;
-    const total=(cpoz&&amt)?cpoz*amt:null;
+    const total=(cpoz!=null&&amt)?cpoz*amt:null;
     const abv=item?item.abv:null;
     const alc=(abv!=null&&amt)?abv*amt:null;
     const notFound=row.name&&!item;
@@ -1164,7 +1165,7 @@ function recalcBuilder(){
     const cpoz=item?costPerOz(item):null;
     const amt=parseFloat(row.amount)||0;
     const abv=item?(item.abv||0):0;
-    if(cpoz&&amt) totalCost+=cpoz*amt;
+    if(cpoz!=null&&amt) totalCost+=cpoz*amt;
     if(amt) totalAlc+=abv*amt;
     totalOz+=amt;
   });
@@ -1181,7 +1182,7 @@ function recalcBuilder(){
   const swirlDrinkCost=swirlCpoz*serveOz;
   const cat=(document.getElementById('b-cat').value||'').toLowerCase();
   const isSwirl=(cat==='swirl'||cat==='craft'||cat==='signature'||cat==='sangria');
-  const displayCost=isSwirl?swirlDrinkCost:drinkCost;
+  const displayCost=isSwirl?swirlDrinkCost:totalCost;  // standalone: use totalCost, not cpoz*serveOz
   const cogPct=menuPrice?displayCost/menuPrice:null;
   // Show/hide swirl-specific rows
   const swirlOnly=['s-swirl-abv-row','s-swirl-cost-row'];
@@ -1334,7 +1335,8 @@ function calcVersionMetrics(ver){
   const swirlDrinkCost=swirlCpoz*serveOz;   // full swirl drink cost (incl. marg mix)
   const cog=menuPrice?drinkCost/menuPrice:null;
   const swirlCog=menuPrice?swirlDrinkCost/menuPrice:null;
-  return {totalCost,cpoz,abv,swirlAbv,swirlCpoz,drinkCost,swirlDrinkCost,cog,swirlCog,menuPrice};
+  const standaloneCog=menuPrice?totalCost/menuPrice:null;  // for non-swirl: cost is just the ingredients, no serve-size scaling
+  return {totalCost,cpoz,abv,swirlAbv,swirlCpoz,drinkCost,swirlDrinkCost,cog,swirlCog,standaloneCog,menuPrice};
 }
 
 function cogBadge(cog){
@@ -1386,7 +1388,7 @@ function renderRecipes(list){
           ${active.menu_price?`<span style="color:#4CAF50;font-weight:600">$${fmtNum(active.menu_price,2)}</span>`:''}
         </div>
         <div class="grid grid-cols-3 gap-2">
-          ${(()=>{const isSw=['swirl','craft','signature','sangria'].includes((group.category||'').toLowerCase());const dispCpoz=isSw?m.swirlCpoz:m.cpoz;const dispAbv=isSw?m.swirlAbv:m.abv;const dispCog=isSw?m.swirlCog:m.cog;return `
+          ${(()=>{const isSw=['swirl','craft','signature','sangria'].includes((group.category||'').toLowerCase());const dispCpoz=isSw?m.swirlCpoz:m.cpoz;const dispAbv=isSw?m.swirlAbv:m.abv;const dispCog=isSw?m.swirlCog:m.standaloneCog;return `
           <div class="metric-box" style="padding:8px">
             <div style="font-size:13px;font-weight:700;color:#4CAF50">$${ fmtNum(dispCpoz||0,4)}</div>
             <div style="font-size:9px;color:#9BB0C8;margin-top:1px;text-transform:uppercase;letter-spacing:.5px">${isSw?'Swirl $/oz':'Drink $/oz'}</div>
@@ -1421,6 +1423,7 @@ function openRecipeModal(groupId){
   document.getElementById('rm-name').textContent=modalRecipeGroup.name;
   document.getElementById('rm-cat').textContent=modalRecipeGroup.category||'';
   document.getElementById('rm-error').classList.add('hidden');
+  const rmYf=document.getElementById('rm-yield'); if(rmYf) delete rmYf.dataset.manual;
   renderModalVersions(); renderModalIngredients();
   document.getElementById('recipe-modal').classList.remove('hidden');
 }
@@ -1507,6 +1510,12 @@ function updateModalIng(idx,field,val){
   const ver=modalRecipeGroup.versions[modalVersionIdx];
   if(!ver||!ver.ingredients[idx]) return;
   ver.ingredients[idx][field]=field==='amount_oz'?parseFloat(val)||0:val;
+  // Auto-recalculate yield from ingredient amounts (unless manually set)
+  const yf=document.getElementById('rm-yield');
+  if(yf&&!yf.dataset.manual){
+    const total=ver.ingredients.reduce((s,i)=>s+(parseFloat(i.amount_oz)||0),0);
+    yf.value=total>0?total.toFixed(2):'';
+  }
   renderModalMetrics(ver);
 }
 function removeModalIngRow(idx){
@@ -1515,6 +1524,11 @@ function removeModalIngRow(idx){
   if(!ver) return;
   ver.ingredients.splice(idx,1);
   renderModalIngredients();
+  const yf=document.getElementById('rm-yield');
+  if(yf&&!yf.dataset.manual){
+    const total=ver.ingredients.reduce((s,i)=>s+(parseFloat(i.amount_oz)||0),0);
+    yf.value=total>0?total.toFixed(2):'';
+  }
 }
 function addIngRowModal(){
   if(!modalRecipeGroup) return;
@@ -1544,9 +1558,9 @@ function addIngRowModal(){
 function renderModalMetrics(ver){
   const m=calcVersionMetrics(ver);
   const isSwirlCat=['swirl','craft','signature','sangria'].includes((modalRecipeGroup?.category||'').toLowerCase());
-  const displayCost=isSwirlCat?(m.swirlDrinkCost||0):(m.drinkCost||0);
+  const displayCost=isSwirlCat?(m.swirlDrinkCost||0):(m.totalCost||0);  // standalone: full recipe cost, no serve-size scaling
   const displayCpoz=isSwirlCat?(m.swirlCpoz||0):(m.cpoz||0);
-  const displayCog=isSwirlCat?m.swirlCog:m.cog;
+  const displayCog=isSwirlCat?m.swirlCog:m.standaloneCog;
   const costLbl=isSwirlCat?'Swirl Drink Cost':'Drink Cost';
   const cpozLbl=isSwirlCat?'Swirl Cost/oz':'Drink Cost/oz';
   const cogLbl=isSwirlCat?'Swirl COG':'COG';
