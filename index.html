@@ -1508,7 +1508,7 @@ function renderModalIngredients(){
   const yf=document.getElementById('rm-yield');
   if(yf&&!yf.dataset.manual){
     const total=(ver.ingredients||[]).reduce((s,i)=>s+(parseFloat(i.amount_oz)||0),0);
-    if(total>0) yf.value=fmtNum(total,2);
+    if(total>0){ yf.value=fmtNum(total,2); ver.yield_oz=total; }
   }
   renderModalMetrics(ver);
 }
@@ -1523,6 +1523,7 @@ function updateModalIng(idx,field,val){
   if(yf&&!yf.dataset.manual){
     const total=ver.ingredients.reduce((s,i)=>s+(parseFloat(i.amount_oz)||0),0);
     yf.value=total>0?total.toFixed(2):'';
+    ver.yield_oz=total>0?total:null;
   }
   renderModalMetrics(ver);
 }
@@ -1536,6 +1537,7 @@ function removeModalIngRow(idx){
   if(yf&&!yf.dataset.manual){
     const total=ver.ingredients.reduce((s,i)=>s+(parseFloat(i.amount_oz)||0),0);
     yf.value=total>0?total.toFixed(2):'';
+    ver.yield_oz=total>0?total:null;
   }
 }
 function addIngRowModal(){
